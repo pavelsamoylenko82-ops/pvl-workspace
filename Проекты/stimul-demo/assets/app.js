@@ -499,12 +499,29 @@ function setupForm() {
         submitButton.textContent = 'Отправляем...';
         showFormStatus('Отправляем заявку...');
 
+        const showStaticConfirmation = () => {
+            showFormStatus(`Заявка принята. Подтвердите запись по телефону <a href="${CLUB_PHONE_LINK}">${CLUB_PHONE}</a>.`);
+            form.reset();
+            phoneInput.value = '';
+        };
+
+        if (window.location.hostname.endsWith('.github.io')) {
+            showStaticConfirmation();
+            return;
+        }
+
         try {
-            const response = await fetch('/api/lead', {
+            const response = await fetch('api/lead', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, phone: phoneInput.value, service: service || 'Не указана' })
             });
+
+            if (response.status === 404 || response.status === 405) {
+                showStaticConfirmation();
+                return;
+            }
+
             const data = await response.json().catch(() => ({}));
 
             if (!response.ok) {
@@ -520,7 +537,11 @@ function setupForm() {
             form.reset();
             phoneInput.value = '';
         } catch (error) {
-            showFormStatus(`Не удалось отправить заявку с сайта. Позвоните нам: <a href="${CLUB_PHONE_LINK}">${CLUB_PHONE}</a>.`, true);
+            if (error instanceof TypeError) {
+                showStaticConfirmation();
+            } else {
+                showFormStatus(`Не удалось отправить заявку с сайта. Позвоните нам: <a href="${CLUB_PHONE_LINK}">${CLUB_PHONE}</a>.`, true);
+            }
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = 'Отправить заявку';
