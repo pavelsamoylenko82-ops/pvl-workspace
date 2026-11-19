@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Убрать noindex при выкладке на боевой домен клиента -->
+    <meta name="robots" content="noindex, nofollow">
+    <title>Название бизнеса - Город</title>
+    <meta name="description" content="Описание услуг бизнеса с ценами">
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main id="app">
+        <!-- Сюда верстаются блоки по согласованному дизайн-плану -->
+        <section id="lead-form-section">
+            <form id="leadForm">
+                <input type="text" name="name" placeholder="Ваше имя" required>
+                <input type="tel" name="phone" placeholder="+375 (__) ___-__-__" required>
+                <input type="text" name="service" placeholder="Услуга">
+                <button type="submit">Оставить заявку</button>
+                <p id="formStatus" aria-live="polite"></p>
+            </form>
+        </section>
+    </main>
+
+    <!-- Закреплённая нижняя панель для мобильных (360px) -->
+    <nav class="mobile-bar">
+        <a href="tel:+375000000000">Позвонить</a>
+        <a href="https://t.me/username">Написать</a>
+        <a href="#lead-form-section">Заявка</a>
+    </nav>
+
+    <script src="assets/app.js"></script>
+</body>
+</html>

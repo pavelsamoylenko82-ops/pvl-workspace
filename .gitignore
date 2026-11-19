@@ -1,0 +1,44 @@
+# Секреты и доступы
+.env
+.env.*
+!.env.example
+ДОСТУПЫ.md
+**/ДОСТУПЫ.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+ENV/
+*.egg-info/
+
+# Telegram / сессии
+*.session
+*.session-journal
+
+# Логи и временные файлы
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# ОС и IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+
+# Локальные настройки запуска
+.env.local
