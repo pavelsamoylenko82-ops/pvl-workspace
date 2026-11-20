@@ -1,10 +1,12 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+from deepseek_client import DEFAULT_DEEPSEEK_MODEL, OFFICIAL_DEEPSEEK_BASE_URL, normalize_base_url
 
 PROJECT_DIR = Path(__file__).resolve().parent
 load_dotenv(PROJECT_DIR / ".env")
@@ -58,13 +60,16 @@ def load_settings() -> Settings:
     if not workspace.exists():
         raise ConfigError(f"WORKSPACE_DIR не существует: {workspace}")
 
+    base_url = normalize_base_url(os.getenv("DEEPSEEK_BASE_URL", OFFICIAL_DEEPSEEK_BASE_URL))
+    model = os.getenv("DEEPSEEK_MODEL", DEFAULT_DEEPSEEK_MODEL).strip() or DEFAULT_DEEPSEEK_MODEL
+
     return Settings(
         bot_token=bot_token,
         admin_id=admin_id,
         workspace_dir=workspace,
         git_sync=_as_bool(os.getenv("GIT_SYNC", "false")),
         deepseek_api_key=deepseek_api_key,
-        deepseek_model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat").strip() or "deepseek-chat",
-        deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").strip().rstrip("/"),
+        deepseek_model=model,
+        deepseek_base_url=base_url,
         timezone=os.getenv("TIMEZONE", "Europe/Minsk").strip() or "Europe/Minsk",
     )

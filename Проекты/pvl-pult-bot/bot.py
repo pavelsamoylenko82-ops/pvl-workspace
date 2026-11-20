@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import asyncio
 import logging
@@ -83,24 +83,20 @@ async def send_pult(bot: Bot, chat_id: int, settings: Settings) -> None:
 
 
 def build_summary(result: UpdateResult, git_status: str) -> str:
-    lines = [f"Обновлено: {result.target}"]
+    action = "Создано" if result.created else "Обновлено"
+    lines = [f"{action}: {result.target}"]
+    lines.append(f"Статус: {result.status or 'без изменений'}")
 
     if result.step_line:
         step_text = result.step_line.removeprefix("- [ ] ").strip()
-        lines.append(f"Шаг: {step_text}")
+        lines.append(f"Следующий шаг: {step_text}")
     else:
-        lines.append("Новый шаг не добавлен.")
+        lines.append("Следующий шаг: не изменён")
 
-    changed: list[str] = []
     if result.journal_line:
-        changed.append("журнал")
-    if result.status:
-        changed.append("статус")
-    if result.phone:
-        changed.append("телефон")
-    prefix = f"Записал: {', '.join(changed)}. " if changed else ""
-    lines.append(f"{prefix}{git_status}")
-    return "\n".join(lines[:3])
+        lines.append("История касаний: запись добавлена")
+    lines.append(git_status)
+    return "\n".join(lines)
 
 
 def build_router(settings: Settings) -> Router:
@@ -110,111 +106,136 @@ def build_router(settings: Settings) -> Router:
 
     @router.message(Command("start"))
     async def cmd_start(message: Message) -> None:
-        await safe_answer(
-            message,
-            "Пульт в кармане на связи.\n"
-            "/pult - собрать и показать ПУЛЬТ.md\n"
-            "/card <часть имени> - открыть карточку\n"
-            "Обычным текстом - внести правку в карточку или ДЕЛА.md.",
-        )
+        try:
+            await safe_answer(
+                message,
+                "Пульт в кармане на связи.\n"
+                "/pult - собрать и показать ПУЛЬТ.md\n"
+                "/card <часть имени> - открыть карточку\n"
+                "Обычным текстом - внести правку в карточку или ДЕЛА.md.\n"
+                "Можно писать свободно: 'Позвонил в Автоэкспресс, перезвонить через 7 дней'.",
+            )
+        except Exception as exc:
+            logger.exception("Ошибка /start")
+            await safe_answer(message, f"Ошибка: {exc}")
 
     @router.message(Command("pult"))
     async def cmd_pult(message: Message) -> None:
         try:
             await send_pult(message.bot, message.chat.id, settings)
-        except (GitError, BuildError, OSError) as exc:
+        except Exception as exc:
             logger.exception("Ошибка /pult")
-            await safe_answer(message, f"ПУЛЬТ не собран: {exc}")
+            await safe_answer(message, f"Ошибка: {exc}")
 
     @router.message(Command("card"))
     async def cmd_card(message: Message, command: CommandObject) -> None:
-        query = (command.args or "").strip()
-        if not query:
-            await safe_answer(message, "Использование: /card <часть имени файла>")
-            return
-
-        matches = find_cards(settings.workspace_dir, query)
-        if not matches:
-            names = [path.name for path in list_card_files(settings.workspace_dir)]
-            available = "\n".join(f"- {name}" for name in names) if names else "- Карточек пока нет."
-            await safe_answer(message, f"Карточка не найдена по запросу: {query}\n\nДоступные файлы:\n{available}")
-            return
-
-        if len(matches) > 1:
-            found = "\n".join(f"- {path.name}" for path in matches)
-            await safe_answer(message, f"Найдено несколько карточек, уточните имя:\n{found}")
-            return
-
-        path = matches[0]
         try:
+            query = (command.args or "").strip()
+            if not query:
+                await safe_answer(message, "Использование: /card <часть имени файла>")
+                return
+
+            matches = find_cards(settings.workspace_dir, query)
+            if not matches:
+                names = [path.name for path in list_card_files(settings.workspace_dir)]
+                available = "\n".join(f"- {name}" for name in names) if names else "- Карточек пока нет."
+                await safe_answer(message, f"Карточка не найдена по запросу: {query}\n\nДоступные файлы:\n{available}")
+                return
+
+            if len(matches) > 1:
+                found = "\n".join(f"- {path.name}" for path in matches)
+                await safe_answer(message, f"Найдено несколько карточек, уточните имя:\n{found}")
+                return
+
+            path = matches[0]
             text = path.read_text(encoding="utf-8")
-        except OSError as exc:
-            await safe_answer(message, f"Не удалось прочитать карточку: {exc}")
-            return
-        await safe_answer(message, f"Карточка: {path.name}\n\n{text}")
+            await safe_answer(message, f"Карточка: {path.name}\n\n{text}")
+        except Exception as exc:
+            logger.exception("Ошибка /card")
+            await safe_answer(message, f"Ошибка: {exc}")
 
     @router.message(F.text & ~F.text.startswith("/"))
     async def handle_free_text(message: Message) -> None:
-        user_text = (message.text or "").strip()
-        if not user_text:
-            return
-
-        await message.bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
-        now = datetime.now(tz)
-        now_text = now.strftime("%Y-%m-%d %H:%M (%Z)")
-
         try:
-            edit = await request_edit(
-                api_key=settings.deepseek_api_key,
-                model=settings.deepseek_model,
-                base_url=settings.deepseek_base_url,
-                card_names=card_names_for_prompt(settings.workspace_dir),
-                now_text=now_text,
-                user_text=user_text,
-                file_context=build_file_context(settings.workspace_dir),
-            )
-            result = await asyncio.to_thread(
-                apply_edit,
-                settings.workspace_dir,
-                edit,
-                settings.timezone,
-            )
-        except (DeepSeekError, DocumentError) as exc:
-            logger.warning("Правка не применена: %s", exc)
-            await safe_answer(message, f"Не получилось внести правку: {exc}\nФайлы не изменены.")
-            return
+            user_text = (message.text or "").strip()
+            if not user_text:
+                return
 
-        try:
-            await asyncio.to_thread(run_build, settings.workspace_dir)
-        except (BuildError, OSError) as exc:
-            logger.exception("Ошибка пересборки ПУЛЬТ.md")
-            await safe_answer(
-                message,
-                f"Записал: {result.target}\n"
-                f"Но ПУЛЬТ.md не пересобрался: {exc}\n"
-                "Git: не выполнялся.",
-            )
-            return
+            await message.bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
+            now = datetime.now(tz)
+            now_text = now.strftime("%Y-%m-%d %H:%M (%Z)")
 
-        git_status = "Git: выключен, изменения только локально."
-        if settings.git_sync:
-            commit_message = f"bot: обновление {result.target} ({now_text})"
             try:
-                pushed = await asyncio.to_thread(
-                    commit_and_push,
-                    settings.workspace_dir,
-                    commit_message,
+                edit = await request_edit(
+                    api_key=settings.deepseek_api_key,
+                    model=settings.deepseek_model,
+                    base_url=settings.deepseek_base_url,
+                    card_names=card_names_for_prompt(settings.workspace_dir),
+                    now_text=now_text,
+                    user_text=user_text,
+                    file_context=build_file_context(settings.workspace_dir),
                 )
-                git_status = (
-                    "Git: изменения отправлены."
-                    if pushed
-                    else "Git: новых изменений для отправки нет."
-                )
-            except GitError as exc:
-                logger.exception("Ошибка git add/commit/pull --rebase/push")
-                git_status = f"Git: сохранено локально, push не выполнен ({exc})."
+            except Exception as exc:
+                logger.exception("Ошибка вызова DeepSeek API")
+                await safe_answer(message, f"Ошибка: {exc}")
+                return
 
-        await safe_answer(message, build_summary(result, git_status))
+            try:
+                result = await asyncio.to_thread(
+                    apply_edit,
+                    settings.workspace_dir,
+                    edit,
+                    settings.timezone,
+                    user_text,
+                )
+            except Exception as exc:
+                logger.exception("Ошибка применения ответа DeepSeek")
+                await safe_answer(message, f"Ошибка: {exc}")
+                return
+
+            try:
+                await asyncio.to_thread(run_build, settings.workspace_dir)
+            except Exception as exc:
+                logger.exception("Ошибка пересборки ПУЛЬТ.md")
+                await safe_answer(
+                    message,
+                    f"Ошибка: {exc}\n"
+                    f"Карточка сохранена: {result.target}\n"
+                    "Git: не выполнялся.",
+                )
+                return
+
+            git_status = "Git: выключен, изменения только локально."
+            if settings.git_sync:
+                commit_message = f"bot: обновление {result.target} ({now_text})"
+                try:
+                    pushed = await asyncio.to_thread(
+                        commit_and_push,
+                        settings.workspace_dir,
+                        commit_message,
+                    )
+                    git_status = (
+                        "Git: изменения отправлены."
+                        if pushed
+                        else "Git: новых изменений для отправки нет."
+                    )
+                except Exception as exc:
+                    logger.exception("Ошибка git add/commit/pull --rebase/push")
+                    await safe_answer(
+                        message,
+                        f"Ошибка: {exc}\n"
+                        f"Карточка сохранена локально: {result.target}\n"
+                        "Git push не выполнен.",
+                    )
+                    return
+
+            await safe_answer(message, build_summary(result, git_status))
+        except Exception as exc:
+            logger.exception("Необработанная ошибка обработчика сообщений")
+            try:
+                await safe_answer(message, f"Ошибка: {exc}")
+            except Exception:
+                logger.exception("Не удалось отправить сообщение об ошибке в Telegram")
 
     return router
 
@@ -224,7 +245,7 @@ async def scheduled_digest(bot: Bot, settings: Settings) -> None:
         await send_pult(bot, settings.admin_id, settings)
     except Exception as exc:
         logger.exception("Ошибка утреннего дайджеста")
-        await safe_send(bot, settings.admin_id, f"Утренний ПУЛЬТ не собран: {exc}")
+        await safe_send(bot, settings.admin_id, f"Ошибка: {exc}")
 
 
 async def main() -> None:
@@ -244,7 +265,13 @@ async def main() -> None:
         replace_existing=True,
     )
     scheduler.start()
-    logger.info("Бот запущен. WORKSPACE_DIR=%s, GIT_SYNC=%s", settings.workspace_dir, settings.git_sync)
+    logger.info(
+        "Бот запущен. WORKSPACE_DIR=%s, GIT_SYNC=%s, DEEPSEEK_BASE_URL=%s, DEEPSEEK_MODEL=%s",
+        settings.workspace_dir,
+        settings.git_sync,
+        settings.deepseek_base_url,
+        settings.deepseek_model,
+    )
 
     try:
         await dispatcher.start_polling(bot)

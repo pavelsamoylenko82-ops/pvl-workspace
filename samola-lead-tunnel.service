@@ -1,0 +1,14 @@
+[Unit]
+Description=SAMOLA lead API Cloudflare quick tunnel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://127.0.0.1:8085 --no-autoupdate --logfile /var/log/samola-tunnel.log
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

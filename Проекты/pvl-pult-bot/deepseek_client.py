@@ -1,38 +1,90 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import re
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
+
+OFFICIAL_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+DEFAULT_DEEPSEEK_MODEL = "deepseek-chat"
 
 
 class DeepSeekError(RuntimeError):
     """Ошибка обращения к DeepSeek."""
 
 
-SYSTEM_PROMPT = """Ты аккуратный редактор личной базы знаний.
-Твоя задача: по сообщению пользователя выбрать один файл и вернуть только JSON без пояснений и markdown.
+SYSTEM_PROMPT = """Ты аккуратный ассистент отдела продаж и редактор личной базы знаний.
+Твоя задача: разобрать ЛЮБОЕ сообщение пользователя о лидах, звонках, контактах,
+компаниях и следующих шагах и вернуть только один JSON-объект без пояснений и markdown.
 
 Допустимые поля JSON:
 {
-  "target_file": "точное имя из списка файлов или ДЕЛА.md",
+  "action": "create_card" | "update_card" | "update_dela" | "noop",
+  "target_file": "точное имя существующего файла из списка или Карточки/Название.md, либо ДЕЛА.md",
+  "company": "название компании/лида или null",
+  "city": "город или null",
+  "contact": "имя контактного лица или способ связи или null",
+  "phone": "телефон или null",
+  "messenger": "мессенджер/ник/канал или null",
+  "website": "текущий сайт или null",
+  "socials": "соцсети или null",
+  "status": "новый статус воронки или null",
+  "journal_entry": "YYYY-MM-DD HH:MM: краткая запись касания или null",
   "step_date": "YYYY-MM-DD или null",
   "step_text": "короткий следующий шаг или null",
-  "journal_entry": "YYYY-MM-DD: краткая запись или null",
-  "status": "новый статус карточки или null",
-  "phone": "телефон или null",
   "summary": "очень короткая сводка или null"
 }
 
 Правила:
-1. target_file выбирай только из переданного списка карточек или "ДЕЛА.md".
-2. Если в сообщении есть задача/следующий шаг, заполни step_date и step_text. Дату бери из сообщения, а если её нет - сегодняшнюю.
-3. Для карточки новую запись журнала верни в journal_entry. Для ДЕЛА.md journal_entry обычно null.
-4. status и phone заполняй только если пользователь явно сообщил новый статус или телефон. Не выдумывай данные.
-5. Если сообщение не относится к карточкам и делам, всё равно выбери наиболее подходящий файл, но не придумывай факты.
-6. Не используй длинные тире. Пиши по-русски, коротко.
-7. Верни строго один JSON-объект. Никаких комментариев до или после JSON."""
+1. Понимай свободную форму. Например: "По Автоэкспресс: позвонил, сказали перезвонить через 7 дней",
+   "Имя: Иван, телефон +375...", "Позвонил в Автоэкспресс, 7 дней сказали ждать".
+2. Если в сообщении есть новая компания/лид и подходящей карточки нет в списке файлов,
+   верни action="create_card", company=<название>, target_file="Карточки/<Название>.md".
+   Если город явно указан, можно указать "Карточки/<Название> (<Город>).md".
+3. Если подходящая карточка уже есть, верни action="update_card" и точный target_file из списка.
+4. Если сообщение относится только к делам, верни action="update_dela", target_file="ДЕЛА.md".
+5. Для любой карточки journal_entry обязателен: дата и время из блока "Текущие дата и время"
+   в формате YYYY-MM-DD HH:MM плюс краткая суть касания. Не выдумывай факты.
+6. status, phone, contact, messenger, website, socials заполняй только если пользователь явно сообщил данные.
+7. Если из сообщения следует следующий шаг или дата следующего контакта, заполни step_date и step_text.
+   Дату бери из сообщения, а если её нет - сегодняшнюю.
+8. Не используй длинные тире. Пиши по-русски, коротко.
+9. Верни строго один JSON-объект. Никаких комментариев до или после JSON."""
+
+
+def normalize_base_url(base_url: str | None) -> str:
+    """Приводит base_url к виду без лишних /chat/completions, /responses и /v1/v1."""
+    raw = str(base_url or "").strip().rstrip("/")
+    if not raw:
+        return OFFICIAL_DEEPSEEK_BASE_URL
+
+    # Если передали полный endpoint, оставляем только базу.
+    lower = raw.lower()
+    for suffix in ("/chat/completions", "/responses"):
+        if lower.endswith(suffix):
+            raw = raw[: -len(suffix)].rstrip("/")
+            lower = raw.lower()
+
+    # Страховка от случайного https://api.deepseek.com/v1/v1.
+    while "/v1/v1" in raw.lower():
+        index = raw.lower().find("/v1/v1")
+        raw = raw[:index] + "/v1" + raw[index + len("/v1/v1") :]
+
+    # Убираем завершающий /v1? Нет: оба варианта официально допустимы.
+    return raw
+
+
+def chat_completions_url(base_url: str | None) -> str:
+    """Возвращает строго POST-эндпоинт OpenAI-совместимого chat/completions."""
+    base = normalize_base_url(base_url)
+    parsed = urlsplit(base)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise DeepSeekError(f"Некорректный DEEPSEEK_BASE_URL: {base_url!r}")
+    if parsed.path.lower().endswith("/chat/completions"):
+        return base
+    return base + "/chat/completions"
 
 
 def _extract_json(content: str) -> dict[str, Any]:
@@ -86,19 +138,21 @@ async def request_edit(
 """
 
     payload = {
-        "model": model,
+        "model": model or DEFAULT_DEEPSEEK_MODEL,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0.1,
+        "max_tokens": 1800,
         "response_format": {"type": "json_object"},
     }
 
+    url = chat_completions_url(base_url)
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=15.0)) as client:
             response = await client.post(
-                f"{base_url}/chat/completions",
+                url,
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
@@ -109,9 +163,11 @@ async def request_edit(
             data = response.json()
     except httpx.HTTPStatusError as exc:
         details = exc.response.text[:500]
-        raise DeepSeekError(f"DeepSeek API ответил {exc.response.status_code}: {details}") from exc
+        raise DeepSeekError(
+            f"DeepSeek API ответил {exc.response.status_code} на {url}: {details}"
+        ) from exc
     except httpx.HTTPError as exc:
-        raise DeepSeekError(f"Не удалось связаться с DeepSeek API: {exc}") from exc
+        raise DeepSeekError(f"Не удалось связаться с DeepSeek API ({url}): {exc}") from exc
     except ValueError as exc:
         raise DeepSeekError("DeepSeek API вернул некорректный JSON") from exc
 
@@ -121,3 +177,4 @@ async def request_edit(
         raise DeepSeekError("Неожиданный формат ответа DeepSeek API") from exc
 
     return _extract_json(str(content))
+
