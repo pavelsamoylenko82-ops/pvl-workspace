@@ -48,3 +48,5 @@ desktop.ini
 
 # Отдельный репозиторий сайта
 Проекты/samola-site/
+*.env.*
+node_modules/
