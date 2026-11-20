@@ -8,8 +8,8 @@ Telegram-бот для управления файлами `Карточки/`, 
 1. Скопируйте `.env.example` в `.env` и заполните `BOT_TOKEN`, `DEEPSEEK_API_KEY`.
 2. Убедитесь, что `WORKSPACE_DIR` указывает на корень проекта PVL.
 3. Проверьте DeepSeek:
-   - `DEEPSEEK_BASE_URL=https://api.deepseek.com` (или `https://api.deepseek.com/v1`)
-   - `DEEPSEEK_MODEL=deepseek-chat`
+   - `DEEPSEEK_BASE_URL=https://freecodex.fun/v1` (OpenAI-совместимый прокси)
+   - `DEEPSEEK_MODEL=deepseek-v4.1-flash-1017-uncensored`
 4. Установите зависимости:
 
 ```bash
