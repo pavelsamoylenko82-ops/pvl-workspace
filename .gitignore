@@ -50,3 +50,10 @@ desktop.ini
 Проекты/samola-site/
 *.env.*
 node_modules/
+
+# Базы данных
+*.db
+*.sqlite*
+
+# Локальный конфиг сторожа (реальные URL и чаты)
+tools/watchdog_targets.json

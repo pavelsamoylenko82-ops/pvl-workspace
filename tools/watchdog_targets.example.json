@@ -1,0 +1,31 @@
+{
+  "retry_wait_seconds": 900,
+  "timeout_seconds": 20,
+  "targets": [
+    {
+      "name": "samola-site",
+      "url": "https://pavelsamoylenko82-ops.github.io/samola-site/",
+      "production": true,
+      "check_noindex": true,
+      "expect_status": 200,
+      "healthz": null
+    },
+    {
+      "name": "example-client-site",
+      "url": "https://example.com/",
+      "production": true,
+      "check_noindex": true,
+      "expect_status": 200,
+      "healthz": null
+    },
+    {
+      "name": "example-ai-consultant",
+      "url": "https://example.com/",
+      "production": true,
+      "check_noindex": true,
+      "expect_status": 200,
+      "healthz": "https://example.com/api/healthz",
+      "healthz_expect_status": 200
+    }
+  ]
+}
