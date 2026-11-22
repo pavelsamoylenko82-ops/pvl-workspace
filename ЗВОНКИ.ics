@@ -1,0 +1,136 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//PVL//ЗВОНКИ//RU
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:ЗВОНКИ
+X-WR-TIMEZONE:Europe/Minsk
+BEGIN:VTIMEZONE
+TZID:Europe/Minsk
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:+0300
+TZOFFSETTO:+0300
+TZNAME:+03
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:926d83b5a2550b3a3325@pvl.local
+DTSTAMP:20261122T142006Z
+DTSTART;TZID=Europe/Minsk:20261123T103000
+DTEND;TZID=Europe/Minsk:20261123T110000
+SUMMARY:[Стройсервис] - повторный звонок в ра
+ бочее время\, выйти на руководителя
+DESCRIPTION:Телефон: +375 17 652-48-63\nСтатус: Недозво
+ н\nКонтекст: звонок на городской +375 17 652-48-
+ 63\, не взяли трубку\nБриф: -
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:36943ffecb9469ab9b23@pvl.local
+DTSTAMP:20261122T142006Z
+DTSTART;TZID=Europe/Minsk:20261123T110000
+DTEND;TZID=Europe/Minsk:20261123T113000
+SUMMARY:[Автоэкспресс] - повторный звонок\, вы
+ йти на руководителя и предложить беспла
+ тный пример сайта
+DESCRIPTION:Телефон: +375 29 530-20-60\nСтатус: Выход н
+ а ЛПР\nКонтекст: первый звонок\, руководи
+ теля нет на месте\, сказали перезвонить в
+  понедельник\nБриф: -
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:3b4b794c9b76625db00e@pvl.local
+DTSTAMP:20261122T142006Z
+DTSTART;TZID=Europe/Minsk:20261123T120000
+DTEND;TZID=Europe/Minsk:20261123T123000
+SUMMARY:[Stimul (Молодечно)] - напомнить в Viber\, за
+ йти в зал вживую и законнектиться через 
+ знакомого тренера
+DESCRIPTION:Телефон: -\nСтатус: Отправлено демо\
+ nКонтекст: Демо-лендинг выложен и провер
+ ен. Готово к отправке владельцу.\nБриф: НЕ
+ Т БРИФА
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:bfe18570adfd91aeff23@pvl.local
+DTSTAMP:20261122T142006Z
+DTSTART;TZID=Europe/Minsk:20261123T130000
+DTEND;TZID=Europe/Minsk:20261123T133000
+SUMMARY:[7 Дней] - повторный звонок (21.11 были за
+ няты)\, зафиксировать согласие на беспла
+ тный пример
+DESCRIPTION:Телефон: +375 29 278-81-00\nСтатус: Теплый 
+ интерес (дожим)\nКонтекст: созвонился с р
+ уководителем\, тема сайта интересна\, но 
+ сейчас очень занят\nБриф: НЕТ БРИФА
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:28b0da1afc474766511b@pvl.local
+DTSTAMP:20261122T142006Z
+DTSTART;TZID=Europe/Minsk:20261125T160000
+DTEND;TZID=Europe/Minsk:20261125T163000
+SUMMARY:[Развал-схождение sto-klumin.by] - контроль
+ ный созвон\, до среды собрать быстрый мак
+ ет-демо
+DESCRIPTION:Телефон: +375 29 190-81-80\nСтатус: Перегов
+ оры / думает\nКонтекст: созвонился\, озвуч
+ ил цену от 250 $\, руководителю интересно\, 
+ ушел думать до следующей недели\nБриф: НЕ
+ Т БРИФА
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

@@ -57,3 +57,6 @@ node_modules/
 
 # Локальный конфиг сторожа (реальные URL и чаты)
 tools/watchdog_targets.json
+
+# Состояние напоминаний
+.state/
