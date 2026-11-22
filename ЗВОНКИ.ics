@@ -16,7 +16,7 @@ END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
 UID:926d83b5a2550b3a3325@pvl.local
-DTSTAMP:20261122T195158Z
+DTSTAMP:20261122T200120Z
 DTSTART;TZID=Europe/Minsk:20261123T103000
 DTEND;TZID=Europe/Minsk:20261123T110000
 SUMMARY:[Стройсервис] - повторный звонок в ра
@@ -38,7 +38,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:36943ffecb9469ab9b23@pvl.local
-DTSTAMP:20261122T195158Z
+DTSTAMP:20261122T200120Z
 DTSTART;TZID=Europe/Minsk:20261123T110000
 DTEND;TZID=Europe/Minsk:20261123T113000
 SUMMARY:[Автоэкспресс] - повторный звонок\, вы
@@ -61,32 +61,8 @@ TRIGGER:-PT5M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:3b4b794c9b76625db00e@pvl.local
-DTSTAMP:20261122T195158Z
-DTSTART;TZID=Europe/Minsk:20261123T120000
-DTEND;TZID=Europe/Minsk:20261123T123000
-SUMMARY:[Stimul (Молодечно)] - напомнить в Viber\, за
- йти в зал вживую и законнектиться через 
- знакомого тренера
-DESCRIPTION:Телефон: -\nСтатус: Отправлено демо\
- nКонтекст: Демо-лендинг выложен и провер
- ен. Готово к отправке владельцу.\nБриф: ес
- ть
-STATUS:CONFIRMED
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 30 минут
-TRIGGER:-PT30M
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 5 минут
-TRIGGER:-PT5M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:bfe18570adfd91aeff23@pvl.local
-DTSTAMP:20261122T195158Z
+UID:258e8e40c6ea24bb587f@pvl.local
+DTSTAMP:20261122T200120Z
 DTSTART;TZID=Europe/Minsk:20261123T130000
 DTEND;TZID=Europe/Minsk:20261123T133000
 SUMMARY:[7 Дней] - повторный звонок (21.11 были за
@@ -109,8 +85,32 @@ TRIGGER:-PT5M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
+UID:8d463714ee6ed076c2a0@pvl.local
+DTSTAMP:20261122T200120Z
+DTSTART;TZID=Europe/Minsk:20261123T150000
+DTEND;TZID=Europe/Minsk:20261123T153000
+SUMMARY:[Stimul (Молодечно)] - написать в Viber\, око
+ ло 16:00 зайти в зал вживую и законнектитьс
+ я через знакомого тренера
+DESCRIPTION:Телефон: -\nСтатус: Отправлено демо\
+ nКонтекст: Демо-лендинг выложен и провер
+ ен. Готово к отправке владельцу.\nБриф: ес
+ ть
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:28b0da1afc474766511b@pvl.local
-DTSTAMP:20261122T195158Z
+DTSTAMP:20261122T200120Z
 DTSTART;TZID=Europe/Minsk:20261125T160000
 DTEND;TZID=Europe/Minsk:20261125T163000
 SUMMARY:[Развал-схождение sto-klumin.by] - контроль
