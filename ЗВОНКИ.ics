@@ -16,7 +16,7 @@ END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
 UID:926d83b5a2550b3a3325@pvl.local
-DTSTAMP:20261122T142006Z
+DTSTAMP:20261122T144155Z
 DTSTART;TZID=Europe/Minsk:20261123T103000
 DTEND;TZID=Europe/Minsk:20261123T110000
 SUMMARY:[Стройсервис] - повторный звонок в ра
@@ -38,7 +38,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:36943ffecb9469ab9b23@pvl.local
-DTSTAMP:20261122T142006Z
+DTSTAMP:20261122T144155Z
 DTSTART;TZID=Europe/Minsk:20261123T110000
 DTEND;TZID=Europe/Minsk:20261123T113000
 SUMMARY:[Автоэкспресс] - повторный звонок\, вы
@@ -62,7 +62,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:3b4b794c9b76625db00e@pvl.local
-DTSTAMP:20261122T142006Z
+DTSTAMP:20261122T144155Z
 DTSTART;TZID=Europe/Minsk:20261123T120000
 DTEND;TZID=Europe/Minsk:20261123T123000
 SUMMARY:[Stimul (Молодечно)] - напомнить в Viber\, за
@@ -70,8 +70,8 @@ SUMMARY:[Stimul (Молодечно)] - напомнить в Viber\, за
  знакомого тренера
 DESCRIPTION:Телефон: -\nСтатус: Отправлено демо\
  nКонтекст: Демо-лендинг выложен и провер
- ен. Готово к отправке владельцу.\nБриф: НЕ
- Т БРИФА
+ ен. Готово к отправке владельцу.\nБриф: ес
+ ть
 STATUS:CONFIRMED
 BEGIN:VALARM
 ACTION:DISPLAY
@@ -86,7 +86,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:bfe18570adfd91aeff23@pvl.local
-DTSTAMP:20261122T142006Z
+DTSTAMP:20261122T144155Z
 DTSTART;TZID=Europe/Minsk:20261123T130000
 DTEND;TZID=Europe/Minsk:20261123T133000
 SUMMARY:[7 Дней] - повторный звонок (21.11 были за
@@ -95,7 +95,7 @@ SUMMARY:[7 Дней] - повторный звонок (21.11 были за
 DESCRIPTION:Телефон: +375 29 278-81-00\nСтатус: Теплый 
  интерес (дожим)\nКонтекст: созвонился с р
  уководителем\, тема сайта интересна\, но 
- сейчас очень занят\nБриф: НЕТ БРИФА
+ сейчас очень занят\nБриф: есть
 STATUS:CONFIRMED
 BEGIN:VALARM
 ACTION:DISPLAY
@@ -110,7 +110,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:28b0da1afc474766511b@pvl.local
-DTSTAMP:20261122T142006Z
+DTSTAMP:20261122T144155Z
 DTSTART;TZID=Europe/Minsk:20261125T160000
 DTEND;TZID=Europe/Minsk:20261125T163000
 SUMMARY:[Развал-схождение sto-klumin.by] - контроль
@@ -119,8 +119,8 @@ SUMMARY:[Развал-схождение sto-klumin.by] - контроль
 DESCRIPTION:Телефон: +375 29 190-81-80\nСтатус: Перегов
  оры / думает\nКонтекст: созвонился\, озвуч
  ил цену от 250 $\, руководителю интересно\, 
- ушел думать до следующей недели\nБриф: НЕ
- Т БРИФА
+ ушел думать до следующей недели\nБриф: ес
+ ть
 STATUS:CONFIRMED
 BEGIN:VALARM
 ACTION:DISPLAY
