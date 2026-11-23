@@ -15,78 +15,8 @@ TZNAME:+03
 END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
-UID:926d83b5a2550b3a3325@pvl.local
-DTSTAMP:20261122T200120Z
-DTSTART;TZID=Europe/Minsk:20261123T103000
-DTEND;TZID=Europe/Minsk:20261123T110000
-SUMMARY:[Стройсервис] - повторный звонок в ра
- бочее время\, выйти на руководителя
-DESCRIPTION:Телефон: +375 17 652-48-63\nСтатус: Недозво
- н\nКонтекст: звонок на городской +375 17 652-48-
- 63\, не взяли трубку\nБриф: -
-STATUS:CONFIRMED
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 30 минут
-TRIGGER:-PT30M
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 5 минут
-TRIGGER:-PT5M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:36943ffecb9469ab9b23@pvl.local
-DTSTAMP:20261122T200120Z
-DTSTART;TZID=Europe/Minsk:20261123T110000
-DTEND;TZID=Europe/Minsk:20261123T113000
-SUMMARY:[Автоэкспресс] - повторный звонок\, вы
- йти на руководителя и предложить беспла
- тный пример сайта
-DESCRIPTION:Телефон: +375 29 530-20-60\nСтатус: Выход н
- а ЛПР\nКонтекст: первый звонок\, руководи
- теля нет на месте\, сказали перезвонить в
-  понедельник\nБриф: -
-STATUS:CONFIRMED
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 30 минут
-TRIGGER:-PT30M
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 5 минут
-TRIGGER:-PT5M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:258e8e40c6ea24bb587f@pvl.local
-DTSTAMP:20261122T200120Z
-DTSTART;TZID=Europe/Minsk:20261123T130000
-DTEND;TZID=Europe/Minsk:20261123T133000
-SUMMARY:[7 Дней] - повторный звонок (21.11 были за
- няты)\, зафиксировать согласие на беспла
- тный пример
-DESCRIPTION:Телефон: +375 29 278-81-00\nСтатус: Теплый 
- интерес (дожим)\nКонтекст: созвонился с р
- уководителем\, тема сайта интересна\, но 
- сейчас очень занят\nБриф: есть
-STATUS:CONFIRMED
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 30 минут
-TRIGGER:-PT30M
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 5 минут
-TRIGGER:-PT5M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:8d463714ee6ed076c2a0@pvl.local
-DTSTAMP:20261122T200120Z
+UID:0a751dac1106570701e4@pvl.local
+DTSTAMP:20261123T075155Z
 DTSTART;TZID=Europe/Minsk:20261123T150000
 DTEND;TZID=Europe/Minsk:20261123T153000
 SUMMARY:[Stimul (Молодечно)] - написать в Viber\, око
@@ -109,8 +39,102 @@ TRIGGER:-PT5M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:28b0da1afc474766511b@pvl.local
-DTSTAMP:20261122T200120Z
+UID:d3b28b7ec554b13574fa@pvl.local
+DTSTAMP:20261123T075155Z
+DTSTART;TZID=Europe/Minsk:20261123T153000
+DTEND;TZID=Europe/Minsk:20261123T160000
+SUMMARY:[7 Дней] - повторный звонок после обед
+ а\, зафиксировать согласие на бесплатный
+  пример
+DESCRIPTION:Телефон: +375 29 278-81-00\nСтатус: Теплый 
+ интерес (дожим)\nКонтекст: созвонился с р
+ уководителем\, тема сайта интересна\, но 
+ сейчас очень занят\nБриф: есть
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:58f3add2b7411d9b6fd6@pvl.local
+DTSTAMP:20261123T075155Z
+DTSTART;TZID=Europe/Minsk:20261123T163000
+DTEND;TZID=Europe/Minsk:20261123T170000
+SUMMARY:[Стройсервис] - повторный звонок в др
+ угое время\, выйти на руководителя
+DESCRIPTION:Телефон: +375 17 652-48-63\nСтатус: Недозво
+ н\nКонтекст: звонок на городской +375 17 652-48-
+ 63\, не взяли трубку\nБриф: -
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:3c460070e9e01fb8a1fe@pvl.local
+DTSTAMP:20261123T075155Z
+DTSTART;TZID=Europe/Minsk:20261124T143000
+DTEND;TZID=Europe/Minsk:20261124T150000
+SUMMARY:[Челсена-Дент] - контрольный звонок р
+ уководству Челсена-Дент (если не перезво
+ нят сами)
+DESCRIPTION:Телефон: +375 29 660-36-98\; 8 0176 50-50-60\nСтату
+ с: Выход на ЛПР\nКонтекст: позвонил на +375 2
+ 9 660-36-98\, дали прямой номер руководства 8 01
+ 76 50-50-60\nБриф: -
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:800694c3318736f96e96@pvl.local
+DTSTAMP:20261123T075155Z
+DTSTART;TZID=Europe/Minsk:20261125T110000
+DTEND;TZID=Europe/Minsk:20261125T113000
+SUMMARY:[Автоэкспресс] - отправить готовый ма
+ кет Автоэкспресс и созвониться по впеча
+ тлению
+DESCRIPTION:Телефон: +375 29 530-20-60\nСтатус: тёплый 
+ интерес\nКонтекст: первый звонок\, руково
+ дителя нет на месте\, сказали перезвонит
+ ь в понедельник\nБриф: НЕТ БРИФА
+STATUS:CONFIRMED
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 30 минут
+TRIGGER:-PT30M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Напоминание за 5 минут
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:f6a8bf16eaae1b1ba74d@pvl.local
+DTSTAMP:20261123T075155Z
 DTSTART;TZID=Europe/Minsk:20261125T160000
 DTEND;TZID=Europe/Minsk:20261125T163000
 SUMMARY:[Развал-схождение sto-klumin.by] - контроль
