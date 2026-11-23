@@ -16,7 +16,7 @@ END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
 UID:0a751dac1106570701e4@pvl.local
-DTSTAMP:20261123T181055Z
+DTSTAMP:20261123T181942Z
 DTSTART;TZID=Europe/Minsk:20261123T150000
 DTEND;TZID=Europe/Minsk:20261123T153000
 SUMMARY:[Stimul (Молодечно)] - написать в Viber\, око
@@ -40,7 +40,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:d3b28b7ec554b13574fa@pvl.local
-DTSTAMP:20261123T181055Z
+DTSTAMP:20261123T181942Z
 DTSTART;TZID=Europe/Minsk:20261123T153000
 DTEND;TZID=Europe/Minsk:20261123T160000
 SUMMARY:[7 Дней] - повторный звонок после обед
@@ -64,7 +64,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:58f3add2b7411d9b6fd6@pvl.local
-DTSTAMP:20261123T181055Z
+DTSTAMP:20261123T181942Z
 DTSTART;TZID=Europe/Minsk:20261123T163000
 DTEND;TZID=Europe/Minsk:20261123T170000
 SUMMARY:[Стройсервис] - повторный звонок в др
@@ -86,16 +86,17 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:3c2c4f3ca36db1346378@pvl.local
-DTSTAMP:20261123T181055Z
+DTSTAMP:20261123T181942Z
 DTSTART;TZID=Europe/Minsk:20261124T140000
 DTEND;TZID=Europe/Minsk:20261124T143000
 SUMMARY:[СтеклоПак Торг (Молодечно)] - напомни
  ть руководителю в мессенджере или созво
  ниться по макету (если не ответил утром)
-DESCRIPTION:Телефон: -\nСтатус: отправлено демо\
- nКонтекст: Бесплатный макет steklopak-demo гото
- в и отправлен руководителю (https://pavelsamoylenko
- 82-ops.github.io/steklopak-demo/).\nБриф: НЕТ БРИФА
+DESCRIPTION:Телефон: +375 29 135-65-31\; +375 29 518-01-60\; +375 29
+  618-01-80\; +375 (176) 53-07-77\nСтатус: отправлено де
+ мо\nКонтекст: Бесплатный макет steklopak-demo г
+ отов и отправлен руководителю (https://pavelsamo
+ ylenko82-ops.github.io/steklopak-demo/).\nБриф: НЕТ БРИФА
 STATUS:CONFIRMED
 BEGIN:VALARM
 ACTION:DISPLAY
@@ -110,7 +111,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:fdce4a0e81e4e945281d@pvl.local
-DTSTAMP:20261123T181055Z
+DTSTAMP:20261123T181942Z
 DTSTART;TZID=Europe/Minsk:20261124T143000
 DTEND;TZID=Europe/Minsk:20261124T150000
 SUMMARY:[Челсена-Дент] - контрольный звонок р
@@ -134,7 +135,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:b1aec95c75e44d28a0af@pvl.local
-DTSTAMP:20261123T181055Z
+DTSTAMP:20261123T181942Z
 DTSTART;TZID=Europe/Minsk:20261125T110000
 DTEND;TZID=Europe/Minsk:20261125T113000
 SUMMARY:[Автоэкспресс] - отправить готовый ма
@@ -158,7 +159,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:6e8e580446383640b3f8@pvl.local
-DTSTAMP:20261123T181055Z
+DTSTAMP:20261123T181942Z
 DTSTART;TZID=Europe/Minsk:20261125T160000
 DTEND;TZID=Europe/Minsk:20261125T163000
 SUMMARY:[Развал-схождение sto-klumin.by] - контроль
