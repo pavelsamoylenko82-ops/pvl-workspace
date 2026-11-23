@@ -62,8 +62,8 @@ export const hero = () => `
   <span class="hero-glow" aria-hidden="true"></span>
   <div class="container relative">
     <div class="grid items-center gap-9 lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)] lg:gap-14">
-      <div class="reveal" data-reveal>
-        <p class="eyebrow-badge">
+      <div class="hero-copy">
+        <p class="eyebrow-badge" data-hero-fade>
           <span class="eyebrow-dot" aria-hidden="true"></span>
           <span class="eyebrow-badge-text">
             <span>${esc(company.hero.eyebrow)}</span>
@@ -71,35 +71,35 @@ export const hero = () => `
             <span>${esc(company.hero.eyebrowTail)}</span>
           </span>
         </p>
-        <h1 class="hero-title mt-5">${esc(company.hero.title)}</h1>
-        <div class="mt-5 max-w-[54ch] space-y-2.5 text-[16.5px] leading-[1.6] text-ink-muted sm:text-[17px]">
+        <h1 class="hero-title mt-5" data-hero-fade>${esc(company.hero.title)}</h1>
+        <div class="mt-5 max-w-[54ch] space-y-2.5 text-[16.5px] leading-[1.6] text-ink-muted sm:text-[17px]" data-hero-fade>
           ${company.hero.lines.map((line) => `<p>${esc(line)}</p>`).join('')}
         </div>
-        <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:gap-3">
+        <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:gap-3" data-hero-fade>
           <a class="btn btn-primary" href="#quiz">${esc(company.cta.primary)}</a>
           <a class="btn btn-ghost" href="tel:${company.primaryPhoneTel}">${phoneIcon(17)} ${esc(company.cta.call)}</a>
         </div>
       </div>
 
-      <figure class="reveal" data-reveal data-delay="80">
-        <div class="window" data-window>
+      <figure class="hero-media">
+        <div class="window" data-hero-media>
           <div class="window-glass">
-            <img
-              src="${company.hero.image.src}"
-              width="${company.hero.image.width}"
-              height="${company.hero.image.height}"
-              alt="${esc(company.hero.image.alt)}"
-              loading="eager"
-              fetchpriority="high"
-              decoding="async"
-              class="window-photo"
-            />
-          </div>
-          <div class="window-sash" data-sash aria-hidden="true">
-            <span class="sash-handle"></span>
+            <div class="window-photo-wrap" data-hero-photo-wrap>
+              <img
+                src="${company.hero.image.src}"
+                width="${company.hero.image.width}"
+                height="${company.hero.image.height}"
+                alt="${esc(company.hero.image.alt)}"
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+                class="window-photo"
+                data-hero-photo
+              />
+            </div>
           </div>
         </div>
-        <figcaption class="window-caption">
+        <figcaption class="window-caption" data-hero-caption>
           <span>${esc(company.hero.image.caption)}</span>
         </figcaption>
       </figure>
@@ -108,8 +108,8 @@ export const hero = () => `
     <div class="mt-9 grid grid-cols-2 gap-3 sm:mt-12 sm:grid-cols-4 sm:gap-4">
       ${company.hero.facts
         .map(
-          (fact, index) => `
-        <div class="hero-fact reveal" data-reveal data-delay="${120 + index * 60}">
+          (fact) => `
+        <div class="hero-fact" data-hero-fade>
           <div class="hero-fact-value">${esc(fact.value)}</div>
           <div class="hero-fact-label">${esc(fact.label)}</div>
         </div>`,
@@ -134,14 +134,16 @@ export const production = () => `
 
         <figure class="mt-7">
           <div class="production-figure">
-            <img
-              src="${company.production.image.src}"
-              width="${company.production.image.width}"
-              height="${company.production.image.height}"
-              alt="${esc(company.production.image.alt)}"
-              loading="lazy"
-              decoding="async"
-            />
+            <div class="production-media" data-production-media>
+              <img
+                src="${company.production.image.src}"
+                width="${company.production.image.width}"
+                height="${company.production.image.height}"
+                alt="${esc(company.production.image.alt)}"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
           </div>
           <figcaption class="production-caption">
             <span>${esc(company.production.image.caption)}</span>
@@ -152,7 +154,7 @@ export const production = () => `
         <p class="production-footnote mt-5">На рынке Беларуси с ${company.since} года. ${esc(company.production.footnote)}</p>
       </div>
 
-      <div class="reveal" data-reveal data-delay="80">
+      <div>
         <div class="flex items-baseline justify-between gap-4 border-b border-white/10 pb-4">
           <h3 class="spec-heading">${esc(company.production.specsTitle)}</h3>
           <span class="spec-note">Своя линия</span>
@@ -162,7 +164,7 @@ export const production = () => `
           ${company.production.specs
             .map(
               (spec, index) => `
-            <article class="bento-card ${bentoSpans[index] || 'bento-2'}">
+            <article class="bento-card ${bentoSpans[index] || 'bento-2'}" data-bento>
               <p class="bento-label">${esc(spec.label)}</p>
               <p class="${index === 3 || index === 4 ? 'bento-value-lg' : 'bento-value'}">${esc(spec.value)}</p>
             </article>`,

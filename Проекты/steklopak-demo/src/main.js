@@ -49,9 +49,12 @@ if (app) {
     initMotion();
   } catch (error) {
     document.documentElement.classList.remove('js-motion');
-    document.querySelectorAll('[data-reveal]').forEach((element) => {
-      element.style.opacity = '1';
-      element.style.transform = 'none';
-    });
+    document
+      .querySelectorAll('[data-reveal], [data-hero-fade], [data-hero-media], [data-bento]')
+      .forEach((element) => {
+        element.style.opacity = '1';
+        element.style.transform = 'none';
+        element.style.clipPath = 'none';
+      });
   }
 }

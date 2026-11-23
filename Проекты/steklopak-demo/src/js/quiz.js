@@ -1,4 +1,4 @@
-import { animate } from 'motion';
+import { gsap } from 'gsap';
 import { company } from '../data/company.js';
 import { arrowIcon, drawings, infoIcon, phoneIcon } from './icons.js';
 
@@ -453,10 +453,17 @@ const resetQuiz = () => {
 /** Плавная смена шагов: slide + fade, отключается при prefers-reduced-motion. */
 const animatePanel = () => {
   if (!els.panel || reduceMotion()) return;
-  animate(
+  gsap.fromTo(
     els.panel,
-    { opacity: [0, 1], x: [direction * 26, 0] },
-    { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
+    { opacity: 0, x: direction * 18 },
+    {
+      opacity: 1,
+      x: 0,
+      duration: 0.35,
+      ease: 'power2.out',
+      overwrite: true,
+      clearProps: 'transform,opacity',
+    },
   );
 };
 

@@ -585,16 +585,15 @@
     line-height: 1.4;
   }
 
-  /* ---------- Окно первого экрана: створка открывается при скролле ---------- */
+  /* ---------- Окно первого экрана: ровная рамка, кадр едет внутри ---------- */
   .window {
     position: relative;
     overflow: hidden;
     padding: 10px;
     border: 1px solid var(--line);
-    border-radius: 26px;
+    border-radius: 24px;
     background: var(--card);
     box-shadow: var(--shadow-md);
-    perspective: 1500px;
   }
 
   .window-glass {
@@ -611,69 +610,19 @@
     }
   }
 
+  .window-photo-wrap {
+    position: absolute;
+    inset: -10% 0;
+    will-change: transform;
+  }
+
   .window-photo {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center;
-  }
-
-  .window-sash {
-    position: absolute;
-    inset: 10px;
-    border: 8px solid rgba(255, 255, 255, 0.96);
-    border-radius: 16px;
-    transform-origin: left center;
-    transform: rotateY(0deg);
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.34),
-      rgba(203, 214, 226, 0.18) 48%,
-      rgba(255, 255, 255, 0.26)
-    );
-    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07), inset 0 0 90px rgba(255, 255, 255, 0.22);
-    pointer-events: none;
     will-change: transform;
-    backface-visibility: hidden;
-  }
-
-  .window-sash::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      90deg,
-      transparent 0 32.9%,
-      rgba(255, 255, 255, 0.92) 32.9% 33.5%,
-      transparent 33.5% 65.9%,
-      rgba(255, 255, 255, 0.92) 65.9% 66.5%,
-      transparent 66.5%
-    );
-  }
-
-  .window-sash::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      114deg,
-      transparent 18%,
-      rgba(255, 255, 255, 0.4) 40%,
-      rgba(255, 255, 255, 0.05) 56%,
-      transparent 72%
-    );
-  }
-
-  .sash-handle {
-    position: absolute;
-    top: 50%;
-    right: 12px;
-    width: 6px;
-    height: 58px;
-    margin-top: -29px;
-    border-radius: 999px;
-    background: var(--accent);
-    box-shadow: 0 6px 16px -4px rgba(234, 88, 12, 0.5);
   }
 
   .window-caption {
@@ -740,16 +689,27 @@
   }
 
   .production-figure {
+    position: relative;
     overflow: hidden;
+    aspect-ratio: 495 / 321;
     border: 1px solid var(--dark-line);
     border-radius: 22px;
     background: #111a2e;
     box-shadow: 0 30px 60px -40px #000;
   }
 
-  .production-figure img {
+  .production-media {
+    position: absolute;
+    inset: -8% 0;
+    will-change: transform;
+  }
+
+  .production-media img {
+    display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
   }
 
   .production-caption {
@@ -1944,12 +1904,6 @@
   .skip-link:focus {
     top: 10px;
   }
-
-  /* Появление секций: класс включает начальное состояние только при живом JS */
-  .js-motion .reveal {
-    opacity: 0;
-    transform: translate3d(0, 24px, 0);
-  }
 }
 
 @media (max-width: 767px) {
@@ -1973,16 +1927,21 @@
     scroll-behavior: auto !important;
   }
 
-  .js-motion .reveal {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-
   .work:hover img {
     transform: none;
   }
 
-  .window-sash {
-    transform: rotateY(-88deg);
+  /* Без движения всё сразу на месте: ни масок, ни сдвигов. */
+  [data-reveal],
+  [data-hero-fade],
+  [data-hero-media],
+  [data-hero-caption],
+  [data-bento],
+  .window-photo,
+  .window-photo-wrap,
+  .production-media {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
   }
 }
