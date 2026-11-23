@@ -1,7 +1,12 @@
+import { animate } from 'motion';
 import { company } from '../data/company.js';
 import { arrowIcon, drawings, infoIcon, phoneIcon } from './icons.js';
 
 const TOTAL = company.quiz.steps.length;
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Направление перехода: 1 вперёд, -1 назад. */
+let direction = 1;
 
 const state = {
   step: 0,
@@ -317,6 +322,7 @@ const validateContacts = () => {
 const goNext = () => {
   const step = company.quiz.steps[state.step];
   if (step.id === 'size' && !validateSizes()) return;
+  direction = 1;
   if (step.id === 'contacts') {
     if (!validateContacts()) return;
     state.submitted = true;
@@ -328,6 +334,7 @@ const goNext = () => {
 };
 
 const goPrev = () => {
+  direction = -1;
   state.step = Math.max(state.step - 1, 0);
   render(true);
 };
@@ -439,7 +446,18 @@ const resetQuiz = () => {
   state.name = '';
   state.phone = '';
   state.submitted = false;
+  direction = 1;
   render(true);
+};
+
+/** Плавная смена шагов: slide + fade, отключается при prefers-reduced-motion. */
+const animatePanel = () => {
+  if (!els.panel || reduceMotion()) return;
+  animate(
+    els.panel,
+    { opacity: [0, 1], x: [direction * 26, 0] },
+    { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
+  );
 };
 
 const render = (focusHeading = false) => {
@@ -462,6 +480,8 @@ const render = (focusHeading = false) => {
     updateChrome();
     bindStep(step.id);
   }
+
+  animatePanel();
 
   if (focusHeading) {
     const heading = els.panel.querySelector('.quiz-question');

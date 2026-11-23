@@ -4,26 +4,26 @@ export default {
   theme: {
     extend: {
       colors: {
-        page: '#F3F5F7',
+        page: '#F4F6F8',
         card: '#FFFFFF',
-        line: '#D8E0E8',
-        ink: { DEFAULT: '#1E293B', muted: '#526071' },
-        graphite: '#0F172A',
-        accent: { DEFAULT: '#0369A1', hover: '#075985' },
+        line: 'rgba(15, 23, 42, 0.08)',
+        ink: { DEFAULT: '#0F172A', muted: '#5B6779' },
+        graphite: '#0B1120',
+        accent: { DEFAULT: '#EA580C', hover: '#C2410C' },
       },
       fontFamily: {
         display: ['Manrope', 'Golos Text', 'Segoe UI', 'sans-serif'],
         body: ['Golos Text', 'Manrope', 'Segoe UI', 'sans-serif'],
       },
       letterSpacing: {
-        tight2: '-0.025em',
+        tight2: '-0.03em',
       },
       maxWidth: {
         shell: '1240px',
       },
-      transitionDuration: {
-        350: '350ms',
-        450: '450ms',
+      boxShadow: {
+        soft: '0 1px 2px rgba(11, 17, 32, 0.05), 0 16px 32px -18px rgba(11, 17, 32, 0.2)',
+        lift: '0 2px 6px rgba(11, 17, 32, 0.05), 0 30px 60px -30px rgba(11, 17, 32, 0.28)',
       },
     },
   },

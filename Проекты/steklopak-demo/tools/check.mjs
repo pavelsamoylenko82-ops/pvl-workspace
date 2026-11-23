@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Playwright-проверка собранного лендинга в режиме эмуляции устройств.
  * Запуск: node tools/check.mjs [baseUrl]
  */
@@ -147,17 +147,23 @@ try {
     page.on('pageerror', (error) => pageErrors.push(String(error)));
 
     await page.goto(BASE, { waitUntil: 'networkidle' });
+    // Плавный скролл отключаем только в проверке: иначе шаги прогона не успевают
+    // пройти страницу целиком и секции остаются нераскрытыми на скриншотах.
+    await page.addStyleTag({ content: 'html{scroll-behavior:auto !important}' });
     await page.waitForTimeout(600);
 
-    // Скролл по всей странице, чтобы подгрузились lazy-изображения.
+    // Скролл по всей странице, чтобы подгрузились lazy-изображения и сработали появления.
     await page.evaluate(async () => {
-      const step = Math.round(window.innerHeight * 0.8);
-      for (let y = 0; y < document.body.scrollHeight; y += step) {
+      const step = Math.round(window.innerHeight * 0.7);
+      const height = document.body.scrollHeight;
+      for (let y = 0; y <= height; y += step) {
         window.scrollTo(0, y);
-        await new Promise((resolve) => setTimeout(resolve, 120));
+        await new Promise((resolve) => setTimeout(resolve, 150));
       }
+      window.scrollTo(0, height);
+      await new Promise((resolve) => setTimeout(resolve, 500));
       window.scrollTo(0, 0);
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((resolve) => setTimeout(resolve, 700));
     });
     await page.waitForLoadState('networkidle');
 
@@ -189,6 +195,9 @@ try {
       await page.waitForTimeout(300);
       await shot(page, 'hero-1440', { fullPage: false });
       await shot(page, 'full-1440', { fullPage: true });
+      await page.locator('#contacts').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(500);
+      await shot(page, 'contacts-1440', { fullPage: false });
       results.fonts = await checkFonts(page);
       results.textChecks['1440'] = await collectText(page);
 

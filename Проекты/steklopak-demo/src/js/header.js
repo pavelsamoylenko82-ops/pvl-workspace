@@ -1,7 +1,17 @@
-﻿/** Компактное мобильное меню: одна навигация, без дублей и без блокировки скролла. */
+/** Компактное мобильное меню и стеклянная шапка при скролле. */
 export function initHeader() {
   const toggle = document.getElementById('menu-toggle');
   const menu = document.getElementById('mobile-menu');
+  const header = document.getElementById('site-header');
+
+  if (header) {
+    const sync = () => {
+      header.classList.toggle('is-scrolled', window.scrollY > 8);
+    };
+    sync();
+    window.addEventListener('scroll', sync, { passive: true });
+  }
+
   if (!toggle || !menu) return;
 
   const setOpen = (open) => {

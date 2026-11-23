@@ -1,4 +1,4 @@
-﻿import { company } from '../data/company.js';
+import { company } from '../data/company.js';
 import {
   arrowIcon,
   burgerIcon,
@@ -17,35 +17,27 @@ const esc = (value) =>
     return map[char];
   });
 
-const marks = `
-  <span class="marks" aria-hidden="true">
-    <span class="mark mark-tl"></span>
-    <span class="mark mark-tr"></span>
-    <span class="mark mark-bl"></span>
-    <span class="mark mark-br"></span>
-  </span>`;
-
 export const header = () => `
 <header class="site-header" id="site-header">
   <div class="container">
     <div class="flex h-16 items-center justify-between gap-3">
-      <a href="#top" class="flex min-h-[44px] items-center gap-2.5" aria-label="${esc(company.brand)}: к началу страницы">
+      <a href="#top" class="brand-link" aria-label="${esc(company.brand)}: к началу страницы">
         ${logoMark(26)}
         <span class="flex flex-col leading-none">
-          <span class="font-display text-[16.5px] font-extrabold tracking-[-0.025em] sm:text-[17.5px]" translate="no">${esc(company.brand)}</span>
-          <span class="mt-1 hidden text-[12px] text-ink-muted min-[350px]:block">${esc(company.tagline)}</span>
+          <span class="brand-name" translate="no">${esc(company.brand)}</span>
+          <span class="brand-tagline hidden min-[360px]:block">${esc(company.tagline)}</span>
         </span>
       </a>
 
-      <nav class="hidden items-center gap-6 lg:flex" aria-label="Основная навигация">
+      <nav class="hidden items-center gap-7 lg:flex" aria-label="Основная навигация">
         ${company.nav
           .map((item) => `<a class="nav-link" href="${item.href}">${esc(item.label)}</a>`)
           .join('')}
       </nav>
 
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2">
         <a class="header-phone hidden xl:inline-flex" href="tel:${company.primaryPhoneTel}">${esc(company.primaryPhone)}</a>
-        <a class="btn btn-primary hidden !min-h-[44px] !px-4 sm:inline-flex" href="#quiz">${esc(company.cta.calculate)}</a>
+        <a class="btn btn-primary btn-header hidden sm:inline-flex" href="#quiz">${esc(company.cta.calculate)}</a>
         <button class="burger lg:hidden" id="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Открыть меню">
           <span class="burger-icon-open">${burgerIcon(20)}</span>
           <span class="burger-icon-close">${closeIcon(20)}</span>
@@ -66,25 +58,32 @@ export const header = () => `
 </header>`;
 
 export const hero = () => `
-<section id="top" class="pt-5 pb-10 sm:pt-8 lg:pt-14 lg:pb-16">
-  <div class="container">
-    <div class="grid items-center gap-7 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.98fr)] lg:gap-12">
-      <div class="lg:row-start-1 lg:col-start-1">
-        <p class="eyebrow"><span class="whitespace-nowrap">${esc(company.hero.eyebrow)} ·</span> <span class="whitespace-nowrap">${esc(company.hero.eyebrowTail)}</span></p>
-        <h1 class="mt-3.5 max-w-[21ch] text-[clamp(1.9rem,5vw,3.45rem)] font-extrabold leading-[1.03] tracking-[-0.025em]">${esc(company.hero.title)}</h1>
-        <div class="mt-4 max-w-[56ch] space-y-2.5 text-[16.5px] leading-[1.6] text-ink-muted sm:text-[17px]">
+<section id="top" class="hero">
+  <span class="hero-glow" aria-hidden="true"></span>
+  <div class="container relative">
+    <div class="grid items-center gap-9 lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)] lg:gap-14">
+      <div class="reveal" data-reveal>
+        <p class="eyebrow-badge">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span class="eyebrow-badge-text">
+            <span>${esc(company.hero.eyebrow)}</span>
+            <span class="badge-sep" aria-hidden="true">·</span>
+            <span>${esc(company.hero.eyebrowTail)}</span>
+          </span>
+        </p>
+        <h1 class="hero-title mt-5">${esc(company.hero.title)}</h1>
+        <div class="mt-5 max-w-[54ch] space-y-2.5 text-[16.5px] leading-[1.6] text-ink-muted sm:text-[17px]">
           ${company.hero.lines.map((line) => `<p>${esc(line)}</p>`).join('')}
         </div>
-        <div class="mt-6 flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+        <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:gap-3">
           <a class="btn btn-primary" href="#quiz">${esc(company.cta.primary)}</a>
           <a class="btn btn-ghost" href="tel:${company.primaryPhoneTel}">${phoneIcon(17)} ${esc(company.cta.call)}</a>
         </div>
       </div>
 
-      <figure class="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-        <div class="frame">
-          ${marks}
-          <div class="frame-img aspect-[4/3]">
+      <figure class="reveal" data-reveal data-delay="80">
+        <div class="window" data-window>
+          <div class="window-glass">
             <img
               src="${company.hero.image.src}"
               width="${company.hero.image.width}"
@@ -93,76 +92,84 @@ export const hero = () => `
               loading="eager"
               fetchpriority="high"
               decoding="async"
-              class="object-cover object-center"
+              class="window-photo"
             />
           </div>
+          <div class="window-sash" data-sash aria-hidden="true">
+            <span class="sash-handle"></span>
+          </div>
         </div>
-        <figcaption class="figure-caption">
+        <figcaption class="window-caption">
           <span>${esc(company.hero.image.caption)}</span>
         </figcaption>
       </figure>
+    </div>
 
-      <div class="grid grid-cols-2 border-y border-line sm:grid-cols-4 sm:divide-x sm:divide-line lg:col-start-1 lg:row-start-2">
-        ${company.hero.facts
-          .map(
-            (fact) => `
-          <div class="hero-fact">
-            <div class="hero-fact-value">${esc(fact.value)}</div>
-            <div class="hero-fact-label">${esc(fact.label)}</div>
-          </div>`,
-          )
-          .join('')}
-      </div>
+    <div class="mt-9 grid grid-cols-2 gap-3 sm:mt-12 sm:grid-cols-4 sm:gap-4">
+      ${company.hero.facts
+        .map(
+          (fact, index) => `
+        <div class="hero-fact reveal" data-reveal data-delay="${120 + index * 60}">
+          <div class="hero-fact-value">${esc(fact.value)}</div>
+          <div class="hero-fact-label">${esc(fact.label)}</div>
+        </div>`,
+        )
+        .join('')}
     </div>
   </div>
 </section>`;
 
+const bentoSpans = ['bento-4', 'bento-2', 'bento-2', 'bento-2', 'bento-2', 'bento-wide'];
+
 export const production = () => `
-<section id="production" class="on-dark bg-graphite text-white">
-  <div class="container py-14 lg:py-20">
-    <div class="grid gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-14">
-      <div>
+<section id="production" class="on-dark production">
+  <span class="production-glow" aria-hidden="true"></span>
+  <span class="production-glow production-glow-2" aria-hidden="true"></span>
+  <div class="container relative py-16 lg:py-24">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+      <div class="reveal" data-reveal>
         <p class="eyebrow">Производство</p>
-        <h2 class="section-title mt-3">${esc(company.production.title)}</h2>
-        <figure class="mt-6">
-          <div class="frame !border-white/10">
-            <div class="frame-img">
-              <img
-                src="${company.production.image.src}"
-                width="${company.production.image.width}"
-                height="${company.production.image.height}"
-                alt="${esc(company.production.image.alt)}"
-                loading="lazy"
-                decoding="async"
-                class="!h-auto"
-              />
-            </div>
+        <h2 class="section-title mt-4 text-white">${esc(company.production.title)}</h2>
+        <p class="production-lead mt-4">${esc(company.production.lead)}</p>
+
+        <figure class="mt-7">
+          <div class="production-figure">
+            <img
+              src="${company.production.image.src}"
+              width="${company.production.image.width}"
+              height="${company.production.image.height}"
+              alt="${esc(company.production.image.alt)}"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
-          <figcaption class="figure-caption !border-white/10 !text-white/50">
+          <figcaption class="production-caption">
             <span>${esc(company.production.image.caption)}</span>
-            <span class="hidden shrink-0 sm:inline">Фото производства</span>
+            <span>Фото производства</span>
           </figcaption>
         </figure>
-        <p class="mt-6 max-w-[54ch] text-[16.5px] leading-[1.62] text-white/70">${esc(company.production.lead)}</p>
-        <p class="mt-5 text-[14px] leading-[1.55] text-white/50">На рынке Беларуси с ${company.since} года. ${esc(company.production.footnote)}</p>
+
+        <p class="production-footnote mt-5">На рынке Беларуси с ${company.since} года. ${esc(company.production.footnote)}</p>
       </div>
 
-      <div class="lg:pt-1">
-        <div class="flex items-baseline justify-between gap-4 border-b border-white/10 pb-3">
-          <h3 class="text-[12.5px] uppercase tracking-[0.13em] text-white/60">${esc(company.production.specsTitle)}</h3>
-          <span class="text-[12.5px] uppercase tracking-[0.13em] text-white/40">Своя линия</span>
+      <div class="reveal" data-reveal data-delay="80">
+        <div class="flex items-baseline justify-between gap-4 border-b border-white/10 pb-4">
+          <h3 class="spec-heading">${esc(company.production.specsTitle)}</h3>
+          <span class="spec-note">Своя линия</span>
         </div>
-        <dl class="spec-list mt-4">
+
+        <div class="bento-grid mt-5">
           ${company.production.specs
             .map(
-              (spec) => `
-            <div class="spec-row">
-              <dt>${esc(spec.label)}</dt>
-              <dd>${esc(spec.value)}</dd>
-            </div>`,
+              (spec, index) => `
+            <article class="bento-card ${bentoSpans[index] || 'bento-2'}">
+              <p class="bento-label">${esc(spec.label)}</p>
+              <p class="${index === 3 || index === 4 ? 'bento-value-lg' : 'bento-value'}">${esc(spec.value)}</p>
+            </article>`,
             )
             .join('')}
-        </dl>
+        </div>
+
         <p class="mt-5 max-w-[46ch] text-[14px] leading-[1.55] text-white/50">
           Замер и точный расчёт делает мастер производства, поэтому в смете нет наценки посредника и лишних позиций.
         </p>
@@ -172,19 +179,19 @@ export const production = () => `
 </section>`;
 
 export const quizShell = () => `
-<section id="quiz" class="py-14 lg:py-20">
+<section id="quiz" class="py-16 lg:py-24">
   <div class="container">
-    <div class="max-w-[720px]">
+    <div class="reveal max-w-[720px]" data-reveal>
       <p class="eyebrow">Расчёт</p>
-      <h2 class="section-title mt-3">${esc(company.quiz.title)}</h2>
+      <h2 class="section-title mt-4">${esc(company.quiz.title)}</h2>
       <p class="lead mt-4">${esc(company.quiz.lead)}</p>
     </div>
 
-    <div class="quiz-shell mt-8 lg:mt-10">
-      <div class="p-5 sm:p-7 lg:p-9">
+    <div class="quiz-shell reveal mt-9 lg:mt-11" data-reveal data-delay="80">
+      <div class="p-5 sm:p-8 lg:p-10">
         <div class="quiz-topline">
           <span class="step-counter" id="quiz-counter">Шаг <b>1</b> из ${company.quiz.steps.length}</span>
-          <span class="hidden text-[12.5px] uppercase tracking-[0.12em] text-ink-muted sm:block">Расчёт по факту замера</span>
+          <span class="hidden text-[11.5px] font-medium uppercase tracking-[0.12em] text-ink-muted sm:block">Расчёт по факту замера</span>
         </div>
         <div class="progress" id="quiz-progress" aria-hidden="true">
           ${company.quiz.steps.map((_, index) => `<span class="${index === 0 ? 'is-done' : ''}"></span>`).join('')}
@@ -196,31 +203,30 @@ export const quizShell = () => `
 </section>`;
 
 export const works = () => `
-<section id="works" class="py-14 lg:py-20">
+<section id="works" class="py-16 lg:py-24">
   <div class="container">
     <div class="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
-      <div>
+      <div class="reveal" data-reveal>
         <p class="eyebrow">Работы</p>
-        <h2 class="section-title mt-3">Выполненные работы</h2>
+        <h2 class="section-title mt-4">Выполненные работы</h2>
       </div>
-      <p class="max-w-[40ch] text-[14.5px] leading-[1.5] text-ink-muted">
+      <p class="reveal max-w-[40ch] text-[14.5px] leading-[1.55] text-ink-muted" data-reveal>
         Объекты из раздела «Наши работы»: окна, балконы, двери и монтаж. Нажмите на кадр, чтобы открыть его целиком.
       </p>
     </div>
 
-    <div class="works-grid mt-7" id="works-grid">
+    <div class="works-grid mt-8" id="works-grid">
       ${company.works
         .map(
           (work, index) => `
-        <button class="work" type="button" data-area="${work.area}" data-index="${index}"
+        <button class="work reveal" type="button" data-area="${work.area}" data-index="${index}"
+                data-reveal data-delay="${index * 60}"
                 aria-label="Открыть фото: ${esc(work.caption)}">
           <img src="${work.src}" width="${work.width}" height="${work.height}" alt="${esc(work.alt)}"
                loading="lazy" decoding="async" />
+          <span class="work-tag">${esc(work.tag)}</span>
           <span class="work-zoom" aria-hidden="true">${arrowIcon(15)}</span>
-          <span class="work-cap">
-            <span>${esc(work.caption)}</span>
-            <span class="work-tag">${esc(work.tag)}</span>
-          </span>
+          <span class="work-cap"><span>${esc(work.caption)}</span></span>
         </button>`,
         )
         .join('')}
@@ -229,47 +235,50 @@ export const works = () => `
 </section>`;
 
 export const extras = () => `
-<section id="extra" class="pb-14 lg:pb-20">
-  <div class="container border-t border-line pt-10 lg:pt-12">
+<section id="extra" class="pb-16 lg:pb-24">
+  <div class="container">
     <div class="grid gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:gap-14">
-      <div>
+      <div class="reveal" data-reveal>
         <p class="eyebrow">Дополнительно</p>
-        <h2 class="mt-3 text-[22px] font-bold leading-[1.15] tracking-[-0.02em] sm:text-[26px]">${esc(company.extras.title)}</h2>
+        <h2 class="mt-4 text-[24px] font-extrabold leading-[1.12] tracking-[-0.028em] sm:text-[28px]">${esc(company.extras.title)}</h2>
         <p class="mt-3 max-w-[36ch] text-[15px] leading-[1.55] text-ink-muted">${esc(company.extras.lead)}</p>
-        <a class="btn btn-ghost mt-5" href="tel:${company.primaryPhoneTel}">${phoneIcon(17)} ${esc(company.extras.cta)}</a>
+        <a class="btn btn-ghost mt-6" href="tel:${company.primaryPhoneTel}">${phoneIcon(17)} ${esc(company.extras.cta)}</a>
       </div>
 
-      <dl class="grid gap-x-10 sm:grid-cols-2">
-        ${company.extras.items
-          .map(
-            (item) => `
-          <div class="extra-row">
-            <dt>${esc(item.title)}</dt>
-            <dd>${esc(item.note)}</dd>
-          </div>`,
-          )
-          .join('')}
-      </dl>
+      <div class="reveal" data-reveal data-delay="80">
+        <dl class="extra-list">
+          ${company.extras.items
+            .map(
+              (item) => `
+            <div class="extra-row">
+              <dt>${esc(item.title)}</dt>
+              <dd>${esc(item.note)}</dd>
+            </div>`,
+            )
+            .join('')}
+        </dl>
+      </div>
     </div>
   </div>
 </section>`;
 
 export const process = () => `
-<section id="process" class="border-y border-line bg-card">
-  <div class="container py-14 lg:py-20">
+<section id="process" class="py-16 lg:py-24">
+  <div class="container">
     <div class="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
-      <div>
+      <div class="reveal" data-reveal>
         <p class="eyebrow">Порядок работы</p>
-        <h2 class="section-title mt-3">${esc(company.process.title)}</h2>
+        <h2 class="section-title mt-4">${esc(company.process.title)}</h2>
       </div>
-      <p class="lead max-w-[44ch] text-[16px]">${esc(company.process.lead)}</p>
+      <p class="reveal max-w-[44ch] text-[16px] leading-[1.6] text-ink-muted" data-reveal>${esc(company.process.lead)}</p>
     </div>
 
     <div class="process-grid mt-9">
       ${company.process.steps
         .map(
-          (step) => `
-        <div class="process-step">
+          (step, index) => `
+        <div class="process-step reveal" data-reveal data-delay="${index * 70}">
+          <span class="process-dot" aria-hidden="true"></span>
           <h3 class="process-name">${esc(step.title)}</h3>
           <p class="process-text">${esc(step.text)}</p>
         </div>`,
@@ -280,7 +289,7 @@ export const process = () => `
 </section>`;
 
 const reviewCard = (review) => `
-<article class="review">
+<article class="review reveal" data-reveal>
   <p class="review-text">${esc(review.text)}</p>
   <div class="review-meta">
     <span class="review-author">${esc(review.author)}</span>
@@ -295,31 +304,33 @@ export const reviews = () => {
   const featured = company.reviews.find((review) => review.featured) || company.reviews[0];
   const rest = company.reviews.filter((review) => review !== featured);
   return `
-  <section id="reviews" class="border-b border-line bg-card">
-    <div class="container py-14 lg:py-20">
-      <div class="grid gap-9 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:gap-14">
+  <section id="reviews" class="py-16 lg:py-24">
+    <div class="container">
+      <div class="grid gap-9 lg:grid-cols-[minmax(0,1.06fr)_minmax(0,0.94fr)] lg:gap-14">
         <div>
-          <p class="eyebrow">Отзывы</p>
-          <h2 class="section-title mt-3">Отзывы клиентов с Яндекс Карт</h2>
-          <div class="mt-6 flex items-end gap-4">
-            <span class="rating-value">${esc(company.rating.valueLabel)}</span>
-            <div class="pb-1">
-              <div class="review-stars" aria-hidden="true">
-                ${Array.from({ length: 4 }, () => starIcon(13)).join('')}
-                <span class="opacity-30">${starIcon(13)}</span>
+          <div class="reveal" data-reveal>
+            <p class="eyebrow">Отзывы</p>
+            <h2 class="section-title mt-4">Отзывы клиентов с Яндекс Карт</h2>
+            <div class="mt-6 flex items-end gap-4">
+              <span class="rating-value">${esc(company.rating.valueLabel)}</span>
+              <div class="pb-1">
+                <div class="review-stars" aria-hidden="true">
+                  ${Array.from({ length: 4 }, () => starIcon(13)).join('')}
+                  <span class="opacity-30">${starIcon(13)}</span>
+                </div>
+                <p class="mt-1.5 text-[13.5px] text-ink-muted">${company.rating.marks} оценок · ${company.rating.reviews} отзывов</p>
               </div>
-              <p class="mt-1.5 text-[13.5px] text-ink-muted">${company.rating.marks} оценок · ${company.rating.reviews} отзывов</p>
             </div>
+            <a class="link-arrow mt-4" href="${company.map.reviewsUrl}" target="_blank" rel="noopener">
+              Смотреть карточку на Яндекс Картах ${arrowIcon(15)}
+            </a>
+            <p class="mt-3 max-w-[40ch] text-[13px] leading-[1.5] text-ink-muted">
+              Тексты приведены дословно, с датой и именем автора. Рейтинг и число оценок - по данным карточки организации.
+            </p>
           </div>
-          <a class="link-arrow mt-4" href="${company.map.reviewsUrl}" target="_blank" rel="noopener">
-            Смотреть карточку на Яндекс Картах ${arrowIcon(15)}
-          </a>
-          <p class="mt-3 max-w-[40ch] text-[13.5px] leading-[1.5] text-ink-muted">
-            Тексты приведены дословно, с датой и именем автора. Рейтинг и число оценок - по данным карточки организации.
-          </p>
 
-          <div class="review-featured mt-7">
-            <span class="block text-accent">${quoteIcon(22)}</span>
+          <div class="review-featured reveal mt-7" data-reveal data-delay="80">
+            <span class="relative block text-accent">${quoteIcon(24)}</span>
             <p class="review-text mt-3">${esc(featured.text)}</p>
             <div class="review-meta">
               <span class="review-author">${esc(featured.author)}</span>
@@ -338,44 +349,49 @@ export const reviews = () => {
 };
 
 export const contacts = () => `
-<footer id="contacts" class="on-dark bg-graphite text-white">
-  <div class="container py-14 lg:py-20">
-    <div class="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-14">
-      <div>
+<footer id="contacts" class="on-dark contacts">
+  <span class="contacts-glow" aria-hidden="true"></span>
+  <div class="container relative py-16 lg:py-20">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)] lg:gap-14">
+      <div class="reveal" data-reveal>
         <p class="eyebrow">Контакты</p>
-        <h2 class="section-title mt-3">Молодечно, производство и офис</h2>
+        <h2 class="section-title mt-4 text-white">Молодечно, производство и офис</h2>
         <p class="lead mt-4 max-w-[46ch]">${esc(company.intro)}</p>
 
-        <div class="mt-7 grid gap-5 sm:grid-cols-2">
-          ${company.addresses
-            .map(
-              (address) => `
-            <div>
-              <p class="text-[12.5px] uppercase tracking-[0.12em] text-white/50">${esc(address.title)}</p>
-              <p class="mt-1.5 text-[17px] leading-[1.4] text-white">${esc(address.value)}</p>
-              <p class="mt-1 text-[13px] text-white/40">${esc(address.note)}</p>
-            </div>`,
-            )
-            .join('')}
-        </div>
-
-        <div class="mt-7 grid gap-6 sm:grid-cols-2">
-          <div>
-            <p class="text-[12.5px] uppercase tracking-[0.12em] text-white/50">Телефоны</p>
-            <div class="mt-1 flex flex-col">
-              ${company.phones
+        <div class="mt-8 grid gap-3 sm:grid-cols-2">
+          <div class="contact-card sm:col-span-2">
+            <p class="contact-label">Адреса</p>
+            <div class="mt-2 grid gap-4 sm:grid-cols-2">
+              ${company.addresses
                 .map(
-                  (phone) =>
-                    `<a class="contact-link" href="tel:${phone.tel}">${esc(phone.label)} <span class="ml-2 text-[12px] font-normal uppercase tracking-[0.1em] text-white/40">${esc(phone.note)}</span></a>`,
+                  (address) => `
+                <div>
+                  <p class="text-[11.5px] uppercase tracking-[0.1em] text-white/40">${esc(address.title)}</p>
+                  <p class="contact-value">${esc(address.value)}</p>
+                  <p class="contact-note">${esc(address.note)}</p>
+                </div>`,
                 )
                 .join('')}
             </div>
           </div>
-          <div>
-            <p class="text-[12.5px] uppercase tracking-[0.12em] text-white/50">График</p>
-            <p class="mt-2 font-display text-[19px] font-bold tracking-[-0.02em]">${esc(company.hours.days)} ${esc(company.hours.time)}</p>
+
+          <div class="contact-card">
+            <p class="contact-label">Телефоны</p>
+            <div class="mt-1 flex flex-col">
+              ${company.phones
+                .map(
+                  (phone) =>
+                    `<a class="contact-link" href="tel:${phone.tel}"><span class="contact-number">${esc(phone.label)}</span><span class="contact-note-label">${esc(phone.note)}</span></a>`,
+                )
+                .join('')}
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <p class="contact-label">График</p>
+            <p class="mt-2 font-display text-[19px] font-extrabold tracking-[-0.02em]">${esc(company.hours.days)} ${esc(company.hours.time)}</p>
             <p class="mt-1 text-[14px] text-white/50">${esc(company.hours.weekend)}</p>
-            <p class="mt-2 max-w-[30ch] text-[13px] leading-[1.45] text-white/40">${esc(company.hours.note)}</p>
+            <p class="mt-2 max-w-[30ch] text-[12.5px] leading-[1.5] text-white/40">${esc(company.hours.note)}</p>
             <a class="footer-link mt-1" href="mailto:${esc(company.email)}">${esc(company.email)}</a>
           </div>
         </div>
@@ -386,38 +402,40 @@ export const contacts = () => `
         </div>
       </div>
 
-      <div>
-        <div class="flex items-baseline justify-between gap-4 border-b border-white/10 pb-3">
-          <h3 class="text-[12.5px] uppercase tracking-[0.13em] text-white/60">Реквизиты</h3>
-          <span class="text-[12.5px] uppercase tracking-[0.13em] text-white/40">ЧТУП</span>
-        </div>
-        <dl class="mt-2">
-          ${company.requisites
-            .map(
-              (item) => `
-            <div class="footer-spec">
-              <dt>${esc(item.label)}</dt>
-              <dd>${esc(item.value)}</dd>
-            </div>`,
-            )
-            .join('')}
-        </dl>
-
-        <div class="mt-6">
-          <p class="text-[12.5px] uppercase tracking-[0.12em] text-white/50">Ссылки</p>
-          <div class="mt-1 flex flex-wrap gap-x-6">
-            ${company.socials
+      <div class="reveal" data-reveal data-delay="80">
+        <div class="footer-panel">
+          <div class="flex items-baseline justify-between gap-4 border-b border-white/10 pb-3">
+            <h3 class="spec-heading">Реквизиты</h3>
+            <span class="spec-note">ЧТУП</span>
+          </div>
+          <dl class="mt-1">
+            ${company.requisites
               .map(
-                (social) =>
-                  `<a class="footer-link" href="${social.url}" target="_blank" rel="noopener">${esc(social.label)}</a>`,
+                (item) => `
+              <div class="footer-spec">
+                <dt>${esc(item.label)}</dt>
+                <dd>${esc(item.value)}</dd>
+              </div>`,
               )
               .join('')}
-          </div>
-        </div>
+          </dl>
 
-        <p class="mt-6 max-w-[40ch] text-[13px] leading-[1.5] text-white/40">
-          Условия, комплектация и сроки согласуются после замера. Информация на странице не является публичной офертой.
-        </p>
+          <div class="mt-5">
+            <p class="contact-label">Ссылки</p>
+            <div class="mt-1 flex flex-wrap gap-x-6">
+              ${company.socials
+                .map(
+                  (social) =>
+                    `<a class="footer-link" href="${social.url}" target="_blank" rel="noopener">${esc(social.label)}</a>`,
+                )
+                .join('')}
+            </div>
+          </div>
+
+          <p class="mt-5 max-w-[40ch] text-[12.5px] leading-[1.5] text-white/40">
+            Условия, комплектация и сроки согласуются после замера. Информация на странице не является публичной офертой.
+          </p>
+        </div>
       </div>
     </div>
 
