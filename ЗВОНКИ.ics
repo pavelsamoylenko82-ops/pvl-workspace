@@ -16,7 +16,7 @@ END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
 UID:0a751dac1106570701e4@pvl.local
-DTSTAMP:20261123T081711Z
+DTSTAMP:20261123T181055Z
 DTSTART;TZID=Europe/Minsk:20261123T150000
 DTEND;TZID=Europe/Minsk:20261123T153000
 SUMMARY:[Stimul (Молодечно)] - написать в Viber\, око
@@ -40,7 +40,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:d3b28b7ec554b13574fa@pvl.local
-DTSTAMP:20261123T081711Z
+DTSTAMP:20261123T181055Z
 DTSTART;TZID=Europe/Minsk:20261123T153000
 DTEND;TZID=Europe/Minsk:20261123T160000
 SUMMARY:[7 Дней] - повторный звонок после обед
@@ -64,7 +64,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:58f3add2b7411d9b6fd6@pvl.local
-DTSTAMP:20261123T081711Z
+DTSTAMP:20261123T181055Z
 DTSTART;TZID=Europe/Minsk:20261123T163000
 DTEND;TZID=Europe/Minsk:20261123T170000
 SUMMARY:[Стройсервис] - повторный звонок в др
@@ -85,19 +85,17 @@ TRIGGER:-PT5M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:cc7409d85aabd9467dd1@pvl.local
-DTSTAMP:20261123T081711Z
-DTSTART;TZID=Europe/Minsk:20261124T120000
-DTEND;TZID=Europe/Minsk:20261124T123000
-SUMMARY:[СтеклоПак Торг (Молодечно)] - дособра
- ть открытые данные (ОК/Яндекс)\, при необх
- одимости добрать ответы у руководителя..
- .
-DESCRIPTION:Телефон: +375 29 518-01-60\; +3751356531\nСтатус: 
- тёплый интерес\nКонтекст: Созвонился с р
- уководителем (Павел). Им нужен сайт\, рань
- ше предлагали\, но до дела не доходило. Сп
- рашивал по цене.\nБриф: НЕТ БРИФА
+UID:3c2c4f3ca36db1346378@pvl.local
+DTSTAMP:20261123T181055Z
+DTSTART;TZID=Europe/Minsk:20261124T140000
+DTEND;TZID=Europe/Minsk:20261124T143000
+SUMMARY:[СтеклоПак Торг (Молодечно)] - напомни
+ ть руководителю в мессенджере или созво
+ ниться по макету (если не ответил утром)
+DESCRIPTION:Телефон: -\nСтатус: отправлено демо\
+ nКонтекст: Бесплатный макет steklopak-demo гото
+ в и отправлен руководителю (https://pavelsamoylenko
+ 82-ops.github.io/steklopak-demo/).\nБриф: НЕТ БРИФА
 STATUS:CONFIRMED
 BEGIN:VALARM
 ACTION:DISPLAY
@@ -112,7 +110,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:fdce4a0e81e4e945281d@pvl.local
-DTSTAMP:20261123T081711Z
+DTSTAMP:20261123T181055Z
 DTSTART;TZID=Europe/Minsk:20261124T143000
 DTEND;TZID=Europe/Minsk:20261124T150000
 SUMMARY:[Челсена-Дент] - контрольный звонок р
@@ -136,7 +134,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:b1aec95c75e44d28a0af@pvl.local
-DTSTAMP:20261123T081711Z
+DTSTAMP:20261123T181055Z
 DTSTART;TZID=Europe/Minsk:20261125T110000
 DTEND;TZID=Europe/Minsk:20261125T113000
 SUMMARY:[Автоэкспресс] - отправить готовый ма
@@ -159,33 +157,8 @@ TRIGGER:-PT5M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:f37333a7189faa6a13d0@pvl.local
-DTSTAMP:20261123T081711Z
-DTSTART;TZID=Europe/Minsk:20261125T110000
-DTEND;TZID=Europe/Minsk:20261125T113000
-SUMMARY:[СтеклоПак Торг (Молодечно)] - отправи
- ть макет руководителю в мессенджер и соз
- вониться по цене (лендинг от 200 $ /...
-DESCRIPTION:Телефон: +375 29 518-01-60\; +3751356531\nСтатус: 
- тёплый интерес\nКонтекст: Созвонился с р
- уководителем (Павел). Им нужен сайт\, рань
- ше предлагали\, но до дела не доходило. Сп
- рашивал по цене.\nБриф: НЕТ БРИФА
-STATUS:CONFIRMED
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 30 минут
-TRIGGER:-PT30M
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Напоминание за 5 минут
-TRIGGER:-PT5M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:cb38c0a9e6ab3550d48e@pvl.local
-DTSTAMP:20261123T081711Z
+UID:6e8e580446383640b3f8@pvl.local
+DTSTAMP:20261123T181055Z
 DTSTART;TZID=Europe/Minsk:20261125T160000
 DTEND;TZID=Europe/Minsk:20261125T163000
 SUMMARY:[Развал-схождение sto-klumin.by] - контроль
