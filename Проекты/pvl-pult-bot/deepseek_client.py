@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import re
@@ -108,6 +108,56 @@ def _extract_json(content: str) -> dict[str, Any]:
     if not isinstance(parsed, dict):
         raise DeepSeekError("DeepSeek вернул JSON не в виде объекта")
     return parsed
+
+
+async def request_json(
+    *,
+    api_key: str,
+    model: str,
+    base_url: str,
+    messages: list[dict[str, str]],
+    temperature: float = 0.1,
+    max_tokens: int = 900,
+    timeout: float = 90.0,
+) -> dict[str, Any]:
+    """POST в OpenAI-совместимый chat/completions с JSON-режимом."""
+    payload = {
+        "model": model or DEFAULT_DEEPSEEK_MODEL,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "response_format": {"type": "json_object"},
+    }
+    url = chat_completions_url(base_url)
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(timeout, connect=15.0)
+        ) as client:
+            response = await client.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+    except httpx.HTTPStatusError as exc:
+        details = exc.response.text[:500]
+        raise DeepSeekError(
+            f"DeepSeek API ответил {exc.response.status_code} на {url}: {details}"
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise DeepSeekError(f"Не удалось связаться с DeepSeek API ({url}): {exc}") from exc
+    except ValueError as exc:
+        raise DeepSeekError("DeepSeek API вернул некорректный JSON") from exc
+
+    try:
+        content = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise DeepSeekError("Неожиданный формат ответа DeepSeek API") from exc
+    return _extract_json(str(content))
 
 
 async def request_edit(

@@ -1,35 +1,58 @@
+"""Telegram-бот «Пульт»: прямая работа с Google Sheets SAMOLA CRM."""
+
 from __future__ import annotations
 
 import asyncio
-import importlib
+import io
+import json
 import logging
-import subprocess
-import sys
-from datetime import datetime
+import secrets
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from aiogram import Bot, Dispatcher, F, Router
-from aiogram.enums import ChatAction
-from aiogram.filters import BaseFilter, Command, CommandObject
-from aiogram.types import FSInputFile, Message
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.filters import BaseFilter, Command
+from aiogram.types import CallbackQuery, LinkPreviewOptions, Message
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
+from ai_crm import CrmAction, apply_action, format_preview, parse_text
 from config import ConfigError, Settings, load_settings
-from deepseek_client import DeepSeekError, request_edit
-from documents import (
-    DocumentError,
-    UpdateResult,
-    apply_edit,
-    build_file_context,
-    card_names_for_prompt,
-    find_cards,
-    list_card_files,
+from keyboards import (
+    BUTTON_VIEWS,
+    VIEWS,
+    deal_card_kb,
+    lead_actions_kb,
+    lead_card_kb,
+    confirm_kb,
+    pult_kb,
 )
-from git_ops import GitError, commit_and_push, pull_rebase
-from text_utils import safe_answer, safe_send
+from render import (
+    active_deals,
+    esc,
+    format_deal_card,
+    format_header,
+    format_lead_card,
+    format_lead_expanded,
+    hot_items,
+    is_deal_done,
+    is_lead_closed,
+    morning_text,
+    normalize,
+    overdue_items,
+    reminder_text,
+    summary_text,
+    today_items,
+    week_items,
+)
+from sheets import CrmData, CrmSheets, Deal, Lead, write_backup
+from voice import Transcriber, VoiceError
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,406 +60,766 @@ logging.basicConfig(
 )
 logger = logging.getLogger("pvl-pult-bot")
 
-_last_git_pull_at: datetime | None = None
-_brief_job_lock = asyncio.Lock()
-
-
-class BuildError(RuntimeError):
-    """Ошибка запуска собрать.py."""
+MAX_CARDS = 25
+REMINDER_WINDOW_MINUTES = 15
+MAX_AI_INPUT = 1000
+PENDING_TTL = timedelta(minutes=60)
 
 
 class AdminOnly(BaseFilter):
-    def __init__(self, admin_id: int) -> None:
-        self.admin_id = admin_id
+    """Пропускает только владельца бота и ID из ALLOWED_USER_IDS."""
 
-    async def __call__(self, message: Message) -> bool:
-        return bool(message.from_user and message.from_user.id == self.admin_id)
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
 
-
-def run_build(workspace: Path) -> str:
-    result = subprocess.run(
-        [sys.executable, "собрать.py"],
-        cwd=str(workspace),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=120,
-        check=False,
-    )
-    if result.returncode != 0:
-        details = (result.stderr or result.stdout).strip()
-        raise BuildError(details or "собрать.py завершился с ошибкой")
-    return (result.stdout or "").strip()
+    async def __call__(self, event: Message | CallbackQuery) -> bool:
+        user = getattr(event, "from_user", None)
+        return bool(user and self.settings.is_owner(user.id))
 
 
-def workspace_module(settings: Settings, name: str):
-    workspace_text = str(settings.workspace_dir)
-    if workspace_text not in sys.path:
-        sys.path.insert(0, workspace_text)
-    return importlib.import_module(name)
+@dataclass
+class PendingAction:
+    action: CrmAction
+    owner_id: int
+    created_at: datetime
+    is_voice: bool = False
 
 
-async def maybe_pull(settings: Settings, force: bool = False) -> None:
-    """git pull --rebase не чаще раза в 15 минут, чтобы не спамить GitHub."""
-    global _last_git_pull_at
-    if not settings.git_sync:
-        return
-    now = datetime.now(ZoneInfo(settings.timezone))
-    if (
-        not force
-        and _last_git_pull_at is not None
-        and (now - _last_git_pull_at).total_seconds() < 15 * 60
-    ):
-        return
-    try:
-        await asyncio.to_thread(pull_rebase, settings.workspace_dir)
-        _last_git_pull_at = now
-    except GitError as exc:
-        logger.warning("git pull --rebase не выполнен: %s", exc)
+def link_preview_off() -> LinkPreviewOptions:
+    return LinkPreviewOptions(is_disabled=True)
 
 
-async def generate_and_send_briefs(
+async def send_html(
     bot: Bot,
+    chat_id: int,
+    text: str,
+    *,
+    reply_markup=None,
+) -> Message:
+    return await bot.send_message(
+        chat_id=chat_id,
+        text=normalize(text),
+        parse_mode=ParseMode.HTML,
+        reply_markup=reply_markup,
+        link_preview_options=link_preview_off(),
+    )
+
+
+async def edit_html(message: Message, text: str, *, reply_markup=None) -> None:
+    await message.edit_text(
+        normalize(text),
+        parse_mode=ParseMode.HTML,
+        reply_markup=reply_markup,
+        link_preview_options=link_preview_off(),
+    )
+
+
+async def load_data(crm: CrmSheets, settings: Settings) -> CrmData:
+    return await asyncio.to_thread(crm.load, settings.timezone)
+
+
+def build_view(
+    data: CrmData, view: str, today: date
+) -> tuple[str, list[tuple[str, Lead | Deal]]]:
+    if view == "today":
+        leads, deals = today_items(data.leads, data.deals, today)
+        header = format_header(
+            view, today, leads_count=len(leads), deals_count=len(deals)
+        )
+        items = [("l", lead) for lead in leads] + [("d", deal) for deal in deals]
+        return header, items
+
+    if view == "hot":
+        leads = hot_items(data.leads)
+        header = format_header(view, today, leads_count=len(leads))
+        return header, [("l", lead) for lead in leads]
+
+    if view == "overdue":
+        leads, deals = overdue_items(data.leads, data.deals, today)
+        header = format_header(
+            view, today, leads_count=len(leads), deals_count=len(deals)
+        )
+        items = [("l", lead) for lead in leads] + [("d", deal) for deal in deals]
+        return header, items
+
+    if view == "week":
+        leads, deals = week_items(data.leads, data.deals, today)
+        header = format_header(
+            view, today, leads_count=len(leads), deals_count=len(deals)
+        )
+        items = [("l", lead) for lead in leads] + [("d", deal) for deal in deals]
+        return header, items
+
+    if view == "deals":
+        deals = active_deals(data.deals)
+        header = format_header(view, today, deals_count=len(deals))
+        return header, [("d", deal) for deal in deals]
+
+    raise ValueError(f"Неизвестный срез: {view}")
+
+
+def card_keyboard(kind: str, item: Lead | Deal, today: date):
+    if kind == "l":
+        return lead_card_kb(item, today)
+    return deal_card_kb(item, today)
+
+
+def item_text(kind: str, item: Lead | Deal) -> str:
+    return format_lead_card(item) if kind == "l" else format_deal_card(item)
+
+
+async def send_view(
+    bot: Bot,
+    crm: CrmSheets,
     settings: Settings,
-    card_query: str | None = None,
-) -> list[Path]:
-    """Генерирует новые брифы, делает git push и присылает файлы админу."""
-    async with _brief_job_lock:
-        module = workspace_module(settings, "генератор_брифов")
-        if card_query:
-            path = await module.generate_for_query(card_query, force=True)
-            created = [path] if path is not None else []
-        else:
-            created = await module.generate_queue()
+    chat_id: int,
+    view: str,
+) -> None:
+    tz = ZoneInfo(settings.timezone)
+    today = datetime.now(tz).date()
+    data = await load_data(crm, settings)
+    header, items = build_view(data, view, today)
 
-        if not created:
-            return []
+    # Сначала короткая шапка среза, затем карточки.
+    await send_html(bot, chat_id, header, reply_markup=pult_kb())
 
-        if settings.git_sync:
-            names = ", ".join(path.stem for path in created)
+    for kind, item in items[:MAX_CARDS]:
+        await send_html(
+            bot,
+            chat_id,
+            item_text(kind, item),
+            reply_markup=card_keyboard(kind, item, today),
+        )
+    if len(items) > MAX_CARDS:
+        await send_html(
+            bot,
+            chat_id,
+            f"Показаны первые {MAX_CARDS} из {len(items)}. Уточните срез или обновите таблицу.",
+            reply_markup=pult_kb(),
+        )
+
+
+async def send_summary(
+    bot: Bot, crm: CrmSheets, settings: Settings, chat_id: int
+) -> None:
+    """Короткая сводка дня с постоянной клавиатурой (для /start и «Сводка»)."""
+    tz = ZoneInfo(settings.timezone)
+    now = datetime.now(tz)
+    today = now.date()
+    try:
+        data = await load_data(crm, settings)
+        leads, deals = today_items(data.leads, data.deals, today)
+        late_leads, late_deals = overdue_items(data.leads, data.deals, today)
+        text = summary_text(
+            now,
+            calls_count=len(leads),
+            deals_count=len(deals),
+            hot_count=len(hot_items(data.leads)),
+            overdue_count=len(late_leads) + len(late_deals),
+            leads_total=len(data.leads),
+            active_deals=len(active_deals(data.deals)),
+        )
+    except Exception as exc:
+        logger.exception("Не удалось прочитать таблицу для сводки")
+        text = (
+            "<b>Пульт SAMOLA CRM</b>\n"
+            f"Таблица недоступна: {esc(exc)}\n"
+            "Проверьте GOOGLE_CREDS_PATH и доступ service account."
+        )
+    await send_html(bot, chat_id, text, reply_markup=pult_kb())
+
+
+def load_reminder_state(path: Path) -> dict[str, str]:
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {str(key): str(value) for key, value in raw.items()}
+
+
+def save_reminder_state(path: Path, state: dict[str, str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(
+        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    tmp.replace(path)
+
+
+def prune_reminder_state(state: dict[str, str], now: datetime) -> dict[str, str]:
+    cutoff = now - timedelta(days=7)
+    result: dict[str, str] = {}
+    for key, sent_at in state.items():
+        try:
+            moment = datetime.fromisoformat(sent_at)
+        except ValueError:
+            continue
+        if moment.tzinfo is None:
+            moment = moment.replace(tzinfo=now.tzinfo)
+        if moment >= cutoff:
+            result[key] = sent_at
+    return result
+
+
+async def scheduled_reminders(
+    bot: Bot, crm: CrmSheets, settings: Settings
+) -> None:
+    tz = ZoneInfo(settings.timezone)
+    now = datetime.now(tz)
+    state_path = settings.state_dir / "reminders_sent.json"
+    try:
+        data = await load_data(crm, settings)
+        original = load_reminder_state(state_path)
+        state = prune_reminder_state(original, now)
+        if state != original:
+            save_reminder_state(state_path, state)
+
+        for lead in sorted(
+            data.leads,
+            key=lambda item: (
+                item.next_date or date.max,
+                item.next_time or datetime.min.time(),
+            ),
+        ):
+            if lead.next_date is None or lead.next_time is None:
+                continue
+            if is_lead_closed(lead.status):
+                continue
+            call_at = datetime.combine(lead.next_date, lead.next_time).replace(
+                tzinfo=tz
+            )
+            minutes = (call_at - now).total_seconds() / 60
+            if not 0 < minutes <= REMINDER_WINDOW_MINUTES:
+                continue
+            key = f"{lead.id}:{lead.next_date.isoformat()}:{lead.next_time:%H:%M}"
+            if key in state:
+                continue
+
             try:
-                pushed = await asyncio.to_thread(
-                    commit_and_push,
-                    settings.workspace_dir,
-                    f"briefs: авто-генерация ({names})",
-                )
-                if not pushed:
-                    logger.info("Git: новых изменений для отправки нет")
-            except Exception as exc:
-                logger.exception("Ошибка git add/commit/pull --rebase/push после генерации брифов")
-                await safe_send(
+                await send_html(
                     bot,
                     settings.admin_id,
-                    f"Брифы созданы, но git push не выполнен: {exc}",
-                )
-
-        for path in created:
-            try:
-                await bot.send_document(
-                    settings.admin_id,
-                    FSInputFile(str(path), filename=path.name),
-                    caption=f"Бриф готов: {path.stem}",
+                    reminder_text(lead),
+                    reply_markup=lead_card_kb(lead, now.date()),
                 )
             except Exception:
-                logger.exception("Не удалось отправить бриф админу: %s", path)
-        return created
+                logger.exception("Не удалось отправить напоминание: %s", lead.company)
+                continue
 
-
-async def scheduled_reminders(bot: Bot, settings: Settings) -> None:
-    try:
-        await maybe_pull(settings)
-        module = workspace_module(settings, "напоминания")
-        tz = ZoneInfo(settings.timezone)
-        await asyncio.to_thread(module.run_cycle, datetime.now(tz), False)
+            state[key] = now.isoformat()
+            save_reminder_state(state_path, state)
+            logger.info("Напоминание о звонке: %s в %s", lead.company, lead.next_time)
     except Exception:
-        logger.exception("Ошибка фонового цикла напоминаний")
+        logger.exception("Ошибка цикла напоминаний")
 
 
-async def scheduled_briefs(bot: Bot, settings: Settings) -> None:
-    try:
-        await maybe_pull(settings)
-        await generate_and_send_briefs(bot, settings)
-    except Exception:
-        logger.exception("Ошибка фоновой генерации брифов")
-
-
-async def auto_brief_after_edit(bot: Bot, settings: Settings, card_name: str) -> None:
-    try:
-        await maybe_pull(settings)
-        created = await generate_and_send_briefs(bot, settings, card_query=card_name)
-        if created:
-            logger.info("Авто-бриф после правки карточки: %s", card_name)
-    except Exception:
-        logger.exception("Не удалось автоматически обновить бриф после правки карточки")
-        try:
-            await safe_send(
-                bot,
-                settings.admin_id,
-                f"Карточка обновлена, но бриф не создан: {card_name}",
-            )
-        except Exception:
-            logger.exception("Не удалось сообщить об ошибке авто-брифа")
-
-
-async def send_pult(bot: Bot, chat_id: int, settings: Settings) -> None:
-    warning = ""
-    if settings.git_sync:
-        try:
-            await asyncio.to_thread(pull_rebase, settings.workspace_dir)
-        except GitError as exc:
-            logger.warning("git pull --rebase перед /pult не выполнен: %s", exc)
-            warning = "Git pull не выполнен, показываю локальную версию ПУЛЬТ.md.\n\n"
-
-    await asyncio.to_thread(run_build, settings.workspace_dir)
-    pult_path = settings.workspace_dir / "ПУЛЬТ.md"
-    if not pult_path.exists():
-        raise BuildError("После сборки файл ПУЛЬТ.md не найден")
-    pult_text = pult_path.read_text(encoding="utf-8")
-    try:
-        workspace_text = str(settings.workspace_dir)
-        if workspace_text not in sys.path:
-            sys.path.insert(0, workspace_text)
-        from напоминания import digest_summary_line
-
-        pult_text = pult_text.rstrip() + "\n\n" + digest_summary_line()
-    except Exception:
-        logger.exception("Не удалось добавить строку напоминаний в дайджест")
-    await safe_send(bot, chat_id, warning + pult_text)
-
-
-def build_summary(result: UpdateResult, git_status: str) -> str:
-    action = "Создано" if result.created else "Обновлено"
-    lines = [f"{action}: {result.target}"]
-    lines.append(f"Статус: {result.status or 'без изменений'}")
-
-    if result.step_line:
-        step_text = result.step_line.removeprefix("- [ ] ").strip()
-        lines.append(f"Следующий шаг: {step_text}")
-    else:
-        lines.append("Следующий шаг: не изменён")
-
-    if result.journal_line:
-        lines.append("История касаний: запись добавлена")
-    lines.append(git_status)
-    return "\n".join(lines)
-
-
-def build_router(settings: Settings) -> Router:
-    router = Router()
-    router.message.filter(AdminOnly(settings.admin_id))
+async def scheduled_morning(
+    bot: Bot, crm: CrmSheets, settings: Settings
+) -> None:
     tz = ZoneInfo(settings.timezone)
+    today = datetime.now(tz).date()
+    try:
+        data = await load_data(crm, settings)
+        leads, deals = today_items(data.leads, data.deals, today)
+        overdue_leads, overdue_deals = overdue_items(
+            data.leads, data.deals, today
+        )
+        text = morning_text(
+            today,
+            leads_count=len(leads),
+            deals_count=len(deals),
+            overdue_count=len(overdue_leads) + len(overdue_deals),
+        )
+        await send_html(bot, settings.admin_id, text, reply_markup=pult_kb())
+    except Exception as exc:
+        logger.exception("Ошибка утренней сводки")
+        await send_html(
+            bot,
+            settings.admin_id,
+            f"Утренняя сводка не собрана: {esc(exc)}",
+        )
 
-    @router.message(Command("start"))
+
+async def scheduled_backup(
+    bot: Bot, crm: CrmSheets, settings: Settings
+) -> None:
+    try:
+        path = await asyncio.to_thread(
+            write_backup,
+            crm,
+            settings.backups_dir,
+            keep=14,
+            timezone=settings.timezone,
+        )
+        logger.info("Бэкап SAMOLA CRM: %s", path)
+    except Exception:
+        logger.exception("Ошибка JSON-бэкапа SAMOLA CRM")
+
+
+async def handle_card_action(
+    callback: CallbackQuery,
+    crm: CrmSheets,
+    settings: Settings,
+    kind: str,
+    item_id: int,
+    action: str,
+) -> None:
+    if callback.message is None:
+        await callback.answer("Сообщение устарело, откройте меню заново.", show_alert=True)
+        return
+
+    tz = ZoneInfo(settings.timezone)
+    today = datetime.now(tz).date()
+    data = await load_data(crm, settings)
+
+    if kind == "l":
+        lead = next((item for item in data.leads if item.id == item_id), None)
+        if lead is None:
+            await callback.answer("Лид не найден, обновите таблицу.", show_alert=True)
+            return
+
+        if action == "brief":
+            await edit_html(
+                callback.message,
+                format_lead_expanded(lead),
+                reply_markup=lead_actions_kb(lead.id),
+            )
+            await callback.answer("Бриф и заметки раскрыты")
+            return
+
+        if action == "collapse":
+            await edit_html(
+                callback.message,
+                format_lead_card(lead),
+                reply_markup=lead_card_kb(lead, today),
+            )
+            await callback.answer("Свернуто")
+            return
+
+        if action == "today":
+            lead, changes = await asyncio.to_thread(
+                crm.update_lead,
+                lead,
+                next_date=today,
+                today=today,
+                source="кнопка",
+            )
+            await edit_html(
+                callback.message,
+                format_lead_card(lead),
+                reply_markup=lead_card_kb(lead, today),
+            )
+            await callback.answer("Перенесено на сегодня")
+            return
+
+        if action in {"done", "close"}:
+            if lead.next_date is None:
+                await callback.answer("У лида уже нет следующей даты.", show_alert=True)
+                return
+            reason = "Закрыто досрочно" if action == "close" else "Выполнен шаг"
+            lead = await asyncio.to_thread(
+                crm.mark_lead_done, lead, today, reason
+            )
+            text = format_lead_card(lead) + "\n✅ <i>Записано в Историю</i>"
+            await edit_html(
+                callback.message,
+                text,
+                reply_markup=lead_card_kb(lead, today),
+            )
+            await callback.answer(
+                "Закрыто досрочно" if action == "close" else "Записано в Историю"
+            )
+            return
+
+        if action == "plus":
+            lead = await asyncio.to_thread(crm.shift_lead_date, lead, 1, today)
+            await edit_html(
+                callback.message,
+                format_lead_card(lead),
+                reply_markup=lead_card_kb(lead, today),
+            )
+            await callback.answer(f"Новая дата: {lead.next_date:%d.%m}")
+            return
+
+    else:
+        deal = next((item for item in data.deals if item.id == item_id), None)
+        if deal is None:
+            await callback.answer("Дело не найдено, обновите таблицу.", show_alert=True)
+            return
+
+        if action == "done":
+            if is_deal_done(deal.status):
+                await callback.answer("Это дело уже выполнено.", show_alert=True)
+                return
+            deal = await asyncio.to_thread(crm.mark_deal_done, deal, today)
+            text = format_deal_card(deal) + "\n✅ <i>Записано в Историю</i>"
+            await edit_html(callback.message, text, reply_markup=None)
+            await callback.answer("Дело выполнено, запись добавлена в Историю")
+            return
+
+        if action == "plus":
+            deal = await asyncio.to_thread(crm.shift_deal_date, deal, 1, today)
+            await edit_html(
+                callback.message,
+                format_deal_card(deal),
+                reply_markup=deal_card_kb(deal, today),
+            )
+            await callback.answer(f"Новый дедлайн: {deal.deadline:%d.%m}")
+            return
+
+    await callback.answer("Неизвестное действие", show_alert=True)
+
+
+def build_router(settings: Settings, crm: CrmSheets) -> Router:
+    router = Router()
+    router.message.filter(AdminOnly(settings))
+    router.callback_query.filter(AdminOnly(settings))
+
+    pending: dict[str, PendingAction] = {}
+    transcriber = Transcriber(
+        model_name=settings.whisper_model,
+        download_root=settings.whisper_download_root,
+        language=settings.whisper_language,
+        device=settings.whisper_device,
+        compute_type=settings.whisper_compute_type,
+    )
+
+    def prune_pending(now: datetime) -> None:
+        for token, item in list(pending.items()):
+            if now - item.created_at > PENDING_TTL:
+                pending.pop(token, None)
+
+    async def ask_ai(message: Message, text: str, *, is_voice: bool) -> None:
+        tz = ZoneInfo(settings.timezone)
+        now = datetime.now(tz)
+        text = text.strip()
+        if not text:
+            await send_html(
+                message.bot,
+                message.chat.id,
+                "Не расслышал. Повторите голосом или напишите текстом.",
+                reply_markup=pult_kb(),
+            )
+            return
+
+        placeholder = await send_html(
+            message.bot, message.chat.id, "⏳ Разбираю обновление..."
+        )
+        try:
+            data = await load_data(crm, settings)
+            action = await parse_text(
+                text=text[:MAX_AI_INPUT],
+                data=data,
+                now=now,
+                api_key=settings.deepseek_api_key,
+                model=settings.deepseek_model,
+                base_url=settings.deepseek_base_url,
+            )
+        except Exception as exc:
+            logger.exception("ИИ-разбор не удался")
+            await edit_html(
+                placeholder,
+                f"<b>Не удалось разобрать</b>\n{esc(exc)}\n"
+                "Попробуйте короче или проверьте DEEPSEEK_API_KEY.",
+            )
+            return
+
+        if not action.is_known:
+            await edit_html(
+                placeholder,
+                "<b>Не понял формулировку</b>\n"
+                f"{esc(action.reason or 'уточните, о каком лиде или деле речь')}\n"
+                "Пример: «Хоттабыч, статус переговоры, перезвонить 28.11 в 11:00» "
+                "или «Добавь дело: собрать демо 7 Дней до 29.11».",
+            )
+            return
+
+        prune_pending(now)
+        token = secrets.token_urlsafe(8)
+        pending[token] = PendingAction(
+            action=action,
+            owner_id=message.from_user.id if message.from_user else settings.admin_id,
+            created_at=now,
+            is_voice=is_voice,
+        )
+        preview = format_preview(action, data.leads, data.deals)
+        if is_voice:
+            preview = "🎤 <i>Голос распознан</i>\n" + preview
+        await edit_html(placeholder, preview, reply_markup=confirm_kb(token))
+        logger.info("Подготовлено ИИ-обновление CRM: %s", action.kind)
+
+    @router.message(Command("start", "menu"))
     async def cmd_start(message: Message) -> None:
         try:
-            await safe_answer(
-                message,
-                "Пульт в кармане на связи.\n"
-                "/pult - собрать и показать ПУЛЬТ.md\n"
-                "/card <часть имени> - открыть карточку\n"
-                "/brief <часть имени> - пересобрать и прислать бриф\n"
-                "Обычным текстом - внести правку в карточку или ДЕЛА.md.\n"
-                "Можно писать свободно: 'Позвонил в Автоэкспресс, перезвонить через 7 дней'.",
-            )
+            await send_summary(message.bot, crm, settings, message.chat.id)
         except Exception as exc:
             logger.exception("Ошибка /start")
-            await safe_answer(message, f"Ошибка: {exc}")
+            await send_html(
+                message.bot, message.chat.id, f"Ошибка: {esc(exc)}", reply_markup=pult_kb()
+            )
 
-    @router.message(Command("pult"))
-    async def cmd_pult(message: Message) -> None:
+    # Точные тексты ReplyKeyboard. Регистрируются ДО обработчика свободного текста.
+    @router.message(F.text.in_(set(BUTTON_VIEWS)))
+    async def reply_keyboard(message: Message) -> None:
+        view = BUTTON_VIEWS.get((message.text or "").strip(), "")
         try:
-            await send_pult(message.bot, message.chat.id, settings)
+            if view == "summary":
+                await send_summary(message.bot, crm, settings, message.chat.id)
+            elif view in VIEWS:
+                await send_view(message.bot, crm, settings, message.chat.id, view)
+            else:
+                await send_summary(message.bot, crm, settings, message.chat.id)
         except Exception as exc:
-            logger.exception("Ошибка /pult")
-            await safe_answer(message, f"Ошибка: {exc}")
+            logger.exception("Ошибка кнопки %s", message.text)
+            await send_html(
+                message.bot,
+                message.chat.id,
+                f"Ошибка: {esc(exc)}",
+                reply_markup=pult_kb(),
+            )
 
-    @router.message(Command("card"))
-    async def cmd_card(message: Message, command: CommandObject) -> None:
+    @router.callback_query(F.data.startswith("v:"))
+    async def cb_view(callback: CallbackQuery) -> None:
+        view = (callback.data or "").split(":", 1)[1]
+        if callback.message is None:
+            await callback.answer()
+            return
+        if view in {"main", "summary"}:
+            await callback.answer()
+            await send_summary(
+                callback.bot, crm, settings, callback.message.chat.id
+            )
+            return
+        if view not in VIEWS:
+            await callback.answer("Неизвестный срез", show_alert=True)
+            return
+        await callback.answer()
         try:
-            query = (command.args or "").strip()
-            if not query:
-                await safe_answer(message, "Использование: /card <часть имени файла>")
-                return
-
-            matches = find_cards(settings.workspace_dir, query)
-            if not matches:
-                names = [path.name for path in list_card_files(settings.workspace_dir)]
-                available = "\n".join(f"- {name}" for name in names) if names else "- Карточек пока нет."
-                await safe_answer(message, f"Карточка не найдена по запросу: {query}\n\nДоступные файлы:\n{available}")
-                return
-
-            if len(matches) > 1:
-                found = "\n".join(f"- {path.name}" for path in matches)
-                await safe_answer(message, f"Найдено несколько карточек, уточните имя:\n{found}")
-                return
-
-            path = matches[0]
-            text = path.read_text(encoding="utf-8")
-            await safe_answer(message, f"Карточка: {path.name}\n\n{text}")
+            await send_view(
+                callback.bot, crm, settings, callback.message.chat.id, view
+            )
         except Exception as exc:
-            logger.exception("Ошибка /card")
-            await safe_answer(message, f"Ошибка: {exc}")
+            logger.exception("Ошибка среза %s", view)
+            await send_html(
+                callback.bot,
+                callback.message.chat.id,
+                f"Ошибка: {esc(exc)}",
+                reply_markup=pult_kb(),
+            )
 
-    @router.message(Command("brief"))
-    async def cmd_brief(message: Message, command: CommandObject) -> None:
+    @router.callback_query(F.data.startswith("a:"))
+    async def cb_action(callback: CallbackQuery) -> None:
         try:
-            query = (command.args or "").strip()
-            if not query:
-                await safe_answer(message, "Использование: /brief <часть названия компании>")
-                return
-            await message.bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
-            created = await generate_and_send_briefs(message.bot, settings, card_query=query)
-            if not created:
-                await safe_answer(message, f"Бриф не создан по запросу: {query}")
+            _, kind, raw_id, action = (callback.data or "").split(":")
+            item_id = int(raw_id)
+            if kind not in {"l", "d"}:
+                raise ValueError("bad kind")
+            allowed = {"done", "plus", "brief", "collapse", "today", "close"}
+            if action not in allowed:
+                raise ValueError("bad action")
+        except ValueError:
+            await callback.answer("Некорректная кнопка", show_alert=True)
+            return
+
+        try:
+            await handle_card_action(
+                callback, crm, settings, kind, item_id, action
+            )
         except Exception as exc:
-            logger.exception("Ошибка /brief")
-            await safe_answer(message, f"Ошибка: {exc}")
+            logger.exception("Ошибка действия %s над %s", action, raw_id)
+            await callback.answer(
+                f"Ошибка Google Sheets: {normalize(exc)[:150]}", show_alert=True
+            )
 
-    @router.message(F.text & ~F.text.startswith("/"))
-    async def handle_free_text(message: Message) -> None:
+    @router.callback_query(F.data.startswith("ai:"))
+    async def cb_ai(callback: CallbackQuery) -> None:
         try:
-            user_text = (message.text or "").strip()
-            if not user_text:
-                return
+            _, verdict, token = (callback.data or "").split(":")
+        except ValueError:
+            await callback.answer("Некорректная кнопка", show_alert=True)
+            return
+        if callback.message is None:
+            await callback.answer("Сообщение устарело.", show_alert=True)
+            return
 
-            await message.bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
-            now = datetime.now(tz)
-            now_text = now.strftime("%Y-%m-%d %H:%M (%Z)")
-
+        item = pending.pop(token, None)
+        now = datetime.now(ZoneInfo(settings.timezone))
+        if item is None or now - item.created_at > PENDING_TTL:
+            await callback.answer(
+                "Подтверждение устарело, отправьте фразу заново.", show_alert=True
+            )
             try:
-                edit = await request_edit(
-                    api_key=settings.deepseek_api_key,
-                    model=settings.deepseek_model,
-                    base_url=settings.deepseek_base_url,
-                    card_names=card_names_for_prompt(settings.workspace_dir),
-                    now_text=now_text,
-                    user_text=user_text,
-                    file_context=build_file_context(settings.workspace_dir),
+                await edit_html(
+                    callback.message,
+                    "<b>Подтверждение устарело</b>\nОтправьте фразу заново.",
                 )
-            except Exception as exc:
-                logger.exception("Ошибка вызова DeepSeek API")
-                await safe_answer(message, f"Ошибка: {exc}")
-                return
-
-            try:
-                result = await asyncio.to_thread(
-                    apply_edit,
-                    settings.workspace_dir,
-                    edit,
-                    settings.timezone,
-                    user_text,
-                )
-            except Exception as exc:
-                logger.exception("Ошибка применения ответа DeepSeek")
-                await safe_answer(message, f"Ошибка: {exc}")
-                return
-
-            try:
-                await asyncio.to_thread(run_build, settings.workspace_dir)
-            except Exception as exc:
-                logger.exception("Ошибка пересборки ПУЛЬТ.md")
-                await safe_answer(
-                    message,
-                    f"Ошибка: {exc}\n"
-                    f"Карточка сохранена: {result.target}\n"
-                    "Git: не выполнялся.",
-                )
-                return
-
-            git_status = "Git: выключен, изменения только локально."
-            if settings.git_sync:
-                commit_message = f"bot: обновление {result.target} ({now_text})"
-                try:
-                    pushed = await asyncio.to_thread(
-                        commit_and_push,
-                        settings.workspace_dir,
-                        commit_message,
-                    )
-                    git_status = (
-                        "Git: изменения отправлены."
-                        if pushed
-                        else "Git: новых изменений для отправки нет."
-                    )
-                except Exception as exc:
-                    logger.exception("Ошибка git add/commit/pull --rebase/push")
-                    await safe_answer(
-                        message,
-                        f"Ошибка: {exc}\n"
-                        f"Карточка сохранена локально: {result.target}\n"
-                        "Git push не выполнен.",
-                    )
-                    return
-
-            await safe_answer(message, build_summary(result, git_status))
-
-            try:
-                status_module = workspace_module(settings, "собрать")
-                if result.status and status_module.is_warm_status(result.status):
-                    card_name = Path(result.target).stem
-                    asyncio.create_task(auto_brief_after_edit(message.bot, settings, card_name))
             except Exception:
-                logger.exception("Не удалось запустить авто-бриф после правки карточки")
+                pass
+            return
+
+        if verdict == "no":
+            await edit_html(callback.message, "<b>Отменено</b>\nВ CRM ничего не записано.")
+            await callback.answer("Отменено")
+            return
+
+        if verdict != "ok":
+            await callback.answer("Некорректная кнопка", show_alert=True)
+            return
+
+        try:
+            data = await load_data(crm, settings)
+            today = now.date()
+            result = await asyncio.to_thread(
+                apply_action,
+                crm,
+                item.action,
+                leads=data.leads,
+                deals=data.deals,
+                today=today,
+            )
         except Exception as exc:
-            logger.exception("Необработанная ошибка обработчика сообщений")
-            try:
-                await safe_answer(message, f"Ошибка: {exc}")
-            except Exception:
-                logger.exception("Не удалось отправить сообщение об ошибке в Telegram")
+            logger.exception("Ошибка записи ИИ-обновления в CRM")
+            await edit_html(
+                callback.message,
+                f"<b>Не записано</b>\n{esc(exc)}",
+            )
+            await callback.answer("Ошибка записи", show_alert=True)
+            return
+
+        await edit_html(callback.message, result)
+        await callback.answer("Записано в SAMOLA CRM")
+        logger.info("ИИ-обновление записано: %s", item.action.kind)
+
+    @router.message(F.voice)
+    async def voice_message(message: Message) -> None:
+        if message.voice is None:
+            return
+        await send_html(
+            message.bot, message.chat.id, "🎤 Слушаю, распознаю..."
+        )
+        buffer = io.BytesIO()
+        try:
+            await message.bot.download(message.voice, destination=buffer)
+            audio = buffer.getvalue()
+        except Exception as exc:
+            logger.exception("Не удалось скачать голосовое")
+            await send_html(
+                message.bot,
+                message.chat.id,
+                f"Не удалось получить голосовое: {esc(exc)}",
+                reply_markup=pult_kb(),
+            )
+            return
+
+        try:
+            text = await transcriber.transcribe_bytes(audio)
+        except VoiceError as exc:
+            await send_html(
+                message.bot,
+                message.chat.id,
+                f"<b>Голос не распознан</b>\n{esc(exc)}\nНапишите текстом.",
+                reply_markup=pult_kb(),
+            )
+            return
+        except Exception as exc:
+            logger.exception("Ошибка распознавания")
+            await send_html(
+                message.bot,
+                message.chat.id,
+                f"<b>Голос не распознан</b>\n{esc(exc)}",
+                reply_markup=pult_kb(),
+            )
+            return
+
+        if not text.strip():
+            await send_html(
+                message.bot,
+                message.chat.id,
+                "Не расслышал. Повторите голосом или напишите текстом.",
+                reply_markup=pult_kb(),
+            )
+            return
+        await ask_ai(message, text, is_voice=True)
+
+    # Свободный текст: только владелец (фильтр роутера), не команды и не кнопки.
+    @router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(set(BUTTON_VIEWS)))
+    async def free_text(message: Message) -> None:
+        await ask_ai(message, message.text or "", is_voice=False)
 
     return router
-
-
-async def scheduled_digest(bot: Bot, settings: Settings) -> None:
-    try:
-        await send_pult(bot, settings.admin_id, settings)
-    except Exception as exc:
-        logger.exception("Ошибка утреннего дайджеста")
-        await safe_send(bot, settings.admin_id, f"Ошибка: {exc}")
 
 
 async def main() -> None:
     settings = load_settings()
     tz = ZoneInfo(settings.timezone)
 
-    bot = Bot(token=settings.bot_token)
+    crm = CrmSheets(settings.google_creds_path, settings.spreadsheet_id)
+    try:
+        title = await asyncio.to_thread(crm.ping)
+        logger.info("Google Sheets доступны: %s", title)
+    except Exception as exc:
+        logger.error("Google Sheets недоступны на старте: %s", exc)
+
+    if settings.deepseek_api_key:
+        logger.info(
+            "DeepSeek настроен: model=%s base=%s",
+            settings.deepseek_model,
+            settings.deepseek_base_url,
+        )
+    else:
+        logger.warning(
+            "DEEPSEEK_API_KEY не найден: текстовые и голосовые обновления CRM не сработают"
+        )
+
+    bot = Bot(
+        token=settings.bot_token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
     dispatcher = Dispatcher()
-    dispatcher.include_router(build_router(settings))
+    dispatcher.include_router(build_router(settings, crm))
 
     scheduler = AsyncIOScheduler(timezone=tz)
     scheduler.add_job(
         scheduled_reminders,
-        IntervalTrigger(minutes=5, timezone=tz),
-        args=[bot, settings],
-        id="reminders_every_5m",
+        IntervalTrigger(minutes=1, timezone=tz),
+        args=[bot, crm, settings],
+        id="reminders_every_minute",
         replace_existing=True,
         max_instances=1,
         coalesce=True,
     )
     scheduler.add_job(
-        scheduled_briefs,
-        IntervalTrigger(hours=1, timezone=tz),
-        args=[bot, settings],
-        id="briefs_every_hour",
+        scheduled_morning,
+        CronTrigger(hour=8, minute=30, timezone=tz),
+        args=[bot, crm, settings],
+        id="morning_summary",
         replace_existing=True,
         max_instances=1,
         coalesce=True,
     )
     scheduler.add_job(
-        scheduled_digest,
-        CronTrigger(hour=9, minute=0, timezone=tz),
-        args=[bot, settings],
-        id="morning_digest",
+        scheduled_backup,
+        CronTrigger(hour=3, minute=10, timezone=tz),
+        args=[bot, crm, settings],
+        id="daily_backup",
         replace_existing=True,
+        max_instances=1,
+        coalesce=True,
     )
     scheduler.start()
+
     logger.info(
-        "Бот запущен. WORKSPACE_DIR=%s, GIT_SYNC=%s, DEEPSEEK_BASE_URL=%s, DEEPSEEK_MODEL=%s",
-        settings.workspace_dir,
-        settings.git_sync,
-        settings.deepseek_base_url,
-        settings.deepseek_model,
+        "Бот запущен. SPREADSHEET_ID=%s, TIMEZONE=%s, WHISPER=%s, BACKUPS_DIR=%s",
+        settings.spreadsheet_id,
+        settings.timezone,
+        settings.whisper_model,
+        settings.backups_dir,
     )
+
+    # Первый бэкап сразу после старта, чтобы не ждать 03:10.
+    asyncio.create_task(scheduled_backup(bot, crm, settings))
 
     try:
         await dispatcher.start_polling(bot)

@@ -5,6 +5,14 @@
 ДОСТУПЫ.md
 **/ДОСТУПЫ.md
 
+# Google service account (ключ SAMOLA CRM)
+google_creds.json
+**/google_creds.json
+tools/google_creds.json
+
+# JSON-бэкапы Google Sheets
+backups/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -60,3 +68,14 @@ tools/watchdog_targets.json
 
 # Состояние напоминаний
 .state/
+
+# Локальные модели faster-whisper
+models/
+**/models/models--*/
+
+# Временные сборки и GitHub Pages
+/_tmp_*/
+/_gh_*/
+/_deploy/
+*.bak*
+
