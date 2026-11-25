@@ -6,5 +6,7 @@ httpx>=0.27,<1
 python-dotenv>=1.0,<2
 tzdata>=2024.1
 faster-whisper>=1.0,<2
+# PyAV 17+ убрал metadata_errors из av.open, а faster-whisper 1.2 его передаёт.
+av>=16,<17
 fastapi>=0.115,<1
 uvicorn>=0.30,<1
